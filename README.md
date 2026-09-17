@@ -32,3 +32,25 @@ Signal → Investigation → Diagnosis → Decision → Defense → Consequence 
 ### The Boardroom
 
 ![WAR ROOM Boardroom](assets/boardroom.png)
+
+## Architecture
+
+WAR ROOM is built around a deterministic synthetic-data and analytics pipeline.
+
+![WAR ROOM Architecture](assets/architecture.png) 
+
+## Skills Demonstrated
+
+* Business intelligence and KPI analysis
+* Data-driven problem solving
+* Hypothesis-driven investigation
+* Financial and profitability analysis
+* Customer segmentation and retention analysis
+* Pricing and discount analysis
+* Marketing CAC analysis
+* Scenario and what-if modeling
+* Interactive data visualisation
+* Synthetic dataset generation
+* State-driven frontend architecture
+* Decision-support UX
+* Strategic communication and executive decision-making
