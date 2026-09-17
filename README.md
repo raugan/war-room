@@ -14,5 +14,21 @@ Your job is to investigate the evidence, test competing hypotheses, identify the
 
 It's a decision-making loop:
 
-```text
 Signal → Investigation → Diagnosis → Decision → Defense → Consequence → Learning
+## Preview
+
+### Case Brief
+
+![WAR ROOM Case Brief](assets/landing.png)
+
+### Executive Dashboard
+
+![WAR ROOM Executive Dashboard](assets/dashboard.png)
+
+### Investigation & Decision
+
+![WAR ROOM Investigation](assets/investigation.png)
+
+### The Boardroom
+
+![WAR ROOM Boardroom](assets/boardroom.png)
