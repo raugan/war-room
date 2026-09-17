@@ -15,6 +15,46 @@ Your job is to investigate the evidence, test competing hypotheses, identify the
 It's a decision-making loop:
 
 Signal → Investigation → Diagnosis → Decision → Defense → Consequence → Learning
+
+## What's Inside
+
+### Case 001 — Profitability Under Pressure
+
+A fully playable business investigation covering the complete decision-making process:
+
+* **Executive Dashboard** — Surface the most important business signals.
+* **Investigation Desk** — Explore Finance, Customers, Products, Pricing, Marketing, and Operations.
+* **Ask The Data** — Query the underlying dataset through a natural-language interface.
+* **Hypothesis Board** — Test competing explanations using evidence for and against each hypothesis.
+* **Root-Cause Analysis** — Build the causal chain behind the company's declining profitability.
+* **Decision Centre ** — Compare strategic options and their modelled trade-offs.
+* **What-If Simulator** — Experiment with discount, pricing, churn, and marketing assumptions.
+* **The Boardroom** — Defend your decision against challenges from the CEO, CFO, and COO.
+* **Analyst Score** — Receive scores across seven decision-making and analytical dimensions.
+* **Consequence Engine** — See simulated 30/90/365-day outcomes based on your decision.
+* **Case Debrief** — Review your investigation and decision.
+* **Analyst Portfolio** — Save completed case results locally in your browser.
+
+### Case 002 — Coming Soon
+**Status: In Development**
+
+New business scenario coming soon.
+
+### Case 003 — Coming Soon
+**Status: Planned**
+
+New business scenario coming soon.
+
+### Case 004 — Coming Soon
+**Status: Planned**
+
+New business scenario coming soon.
+
+### Case 005 — Coming Soon
+**Status: Planned**
+
+New business scenario coming soon.
+
 ## Preview
 
 ### Case Brief
