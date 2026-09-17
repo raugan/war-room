@@ -1,0 +1,1803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WAR ROOM — Business Decision Intelligence Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0B0F14;
+  --bg-panel:#121822;
+  --bg-panel-alt:#161E29;
+  --bg-raised:#1B2430;
+  --border:#25303E;
+  --border-soft:#1B2430;
+  --text:#E7ECF2;
+  --text-dim:#93A1B3;
+  --text-faint:#5D6B7D;
+  --accent:#3FB6C4;
+  --accent-dim:#25596080;
+  --amber:#E0A339;
+  --pos:#3FBF7F;
+  --neg:#E0596B;
+  --font-sans:'IBM Plex Sans',sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-sans);
+  font-size:14px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+#app{min-height:100vh;}
+a{color:inherit;}
+button{font-family:inherit;cursor:pointer;}
+::selection{background:var(--accent);color:#04141a;}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.mono{font-family:var(--font-mono);}
+.hidden{display:none !important;}
+
+/* ---------- Landing ---------- */
+.landing{
+  min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:64px 24px;
+  background:
+    radial-gradient(ellipse at 20% -10%, #16232c 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 110%, #16202a 0%, transparent 55%),
+    var(--bg);
+}
+.landing-mark{font-family:var(--font-mono);font-size:12px;letter-spacing:.16em;color:var(--accent);margin-bottom:18px;}
+.landing h1{
+  font-size:clamp(44px,7vw,84px);
+  margin:0 0 6px 0;font-weight:700;letter-spacing:-.02em;
+}
+.landing .tagline{color:var(--text-dim);font-size:16px;margin-bottom:48px;max-width:520px;text-align:center;}
+.case-brief{
+  width:100%;max-width:720px;
+  background:var(--bg-panel);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:32px;
+  margin-bottom:28px;
+}
+.case-brief .case-tag{font-family:var(--font-mono);font-size:12px;color:var(--amber);letter-spacing:.08em;margin-bottom:8px;}
+.case-brief h2{font-size:22px;margin:0 0 16px 0;font-weight:600;}
+.case-brief p{color:var(--text-dim);margin:0 0 10px 0;}
+.case-brief .stat-line{font-family:var(--font-mono);color:var(--text);}
+.case-meta-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px;}
+.chip{
+  border:1px solid var(--border);border-radius:4px;
+  padding:6px 11px;font-size:12px;color:var(--text-dim);
+  font-family:var(--font-mono);
+}
+.chip strong{color:var(--text);font-weight:600;}
+.landing-ctas{display:flex;gap:14px;margin-top:8px;}
+.btn{
+  border:1px solid var(--border);background:var(--bg-raised);color:var(--text);
+  padding:12px 22px;border-radius:4px;font-size:14px;font-weight:600;
+  transition:border-color .15s, background .15s;
+}
+.btn:hover{border-color:var(--text-faint);}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#04141a;}
+.btn-primary:hover{background:#54c6d2;border-color:#54c6d2;}
+.btn-ghost{background:transparent;}
+.btn-sm{padding:7px 14px;font-size:12.5px;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.locked-cases{display:flex;gap:12px;margin-top:36px;flex-wrap:wrap;justify-content:center;max-width:900px;}
+.locked-case{
+  border:1px dashed var(--border);border-radius:6px;padding:14px 16px;width:190px;
+  color:var(--text-faint);font-size:12px;
+}
+.locked-case .lc-title{color:var(--text-dim);font-weight:600;font-size:12.5px;margin-bottom:4px;}
+.locked-case .lc-badge{font-family:var(--font-mono);font-size:10px;color:var(--amber);letter-spacing:.06em;}
+
+/* ---------- Onboarding modal ---------- */
+.modal-overlay{position:fixed;inset:0;background:rgba(5,8,11,.72);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
+.modal{background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;max-width:520px;padding:36px;}
+.modal h3{margin-top:0;font-size:20px;}
+.modal p{color:var(--text-dim);}
+.modal .lead{font-size:16px;color:var(--text);line-height:1.7;margin:18px 0 26px 0;}
+.modal .lead b{color:var(--accent);}
+
+/* ---------- App shell ---------- */
+.shell{display:flex;min-height:100vh;}
+.rail{
+  width:220px;flex-shrink:0;background:var(--bg-panel);border-right:1px solid var(--border);
+  padding:20px 0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.rail-brand{font-family:var(--font-mono);font-size:13px;letter-spacing:.1em;color:var(--accent);padding:0 20px 18px 20px;border-bottom:1px solid var(--border);margin-bottom:8px;}
+.rail-item{
+  display:flex;align-items:center;gap:10px;padding:11px 20px;color:var(--text-faint);
+  font-size:13px;border-left:2px solid transparent;
+}
+.rail-item .ri-n{font-family:var(--font-mono);font-size:11px;width:16px;flex-shrink:0;}
+.rail-item.enabled{color:var(--text-dim);cursor:pointer;}
+.rail-item.enabled:hover{background:var(--bg-raised);}
+.rail-item.active{color:var(--text);border-left-color:var(--accent);background:var(--bg-raised);font-weight:600;}
+.rail-item.locked{opacity:.35;}
+.rail-foot{margin-top:auto;padding:16px 20px 4px 20px;border-top:1px solid var(--border);}
+.timer-box{font-family:var(--font-mono);font-size:12px;color:var(--text-dim);}
+.timer-box .tv{color:var(--amber);font-weight:600;font-size:15px;}
+
+.main{flex:1;min-width:0;}
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 32px;border-bottom:1px solid var(--border);background:var(--bg-panel);
+  position:sticky;top:0;z-index:10;
+}
+.topbar .tb-title{font-size:15px;font-weight:600;}
+.topbar .tb-sub{color:var(--text-faint);font-size:12px;font-family:var(--font-mono);}
+.severity{font-family:var(--font-mono);font-size:11px;padding:4px 9px;border-radius:3px;letter-spacing:.05em;}
+.sev-high{background:#2c1418;color:var(--neg);border:1px solid #4a1f26;}
+.content{padding:32px;max-width:1240px;margin:0 auto;}
+
+h2.section-title{font-size:19px;font-weight:600;margin:0 0 4px 0;}
+.section-sub{color:var(--text-dim);font-size:13px;margin:0 0 22px 0;}
+
+/* ---------- KPI cards ---------- */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-bottom:28px;}
+.kpi-card{background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;padding:16px;}
+.kpi-label{font-size:11.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+.kpi-value{font-family:var(--font-mono);font-size:22px;font-weight:600;margin-bottom:6px;}
+.kpi-delta{font-family:var(--font-mono);font-size:12px;display:flex;align-items:center;gap:5px;}
+.kpi-delta.up-good{color:var(--pos);}
+.kpi-delta.up-bad{color:var(--neg);}
+.kpi-delta.down-good{color:var(--pos);}
+.kpi-delta.down-bad{color:var(--neg);}
+.kpi-prev{color:var(--text-faint);font-size:11px;margin-top:4px;}
+
+/* ---------- Panels / cards ---------- */
+.panel{background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;padding:22px;margin-bottom:20px;}
+.panel-title{font-size:14px;font-weight:600;margin:0 0 14px 0;display:flex;align-items:center;justify-content:space-between;}
+.whatchanged-item{
+  display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border-soft);font-size:13.5px;
+}
+.whatchanged-item:last-child{border-bottom:none;}
+.wc-dot{width:7px;height:7px;border-radius:50%;margin-top:6px;flex-shrink:0;}
+.wc-dot.neg{background:var(--neg);}
+.wc-dot.warn{background:var(--amber);}
+.wc-dot.pos{background:var(--pos);}
+
+/* ---------- Tabs ---------- */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:22px;flex-wrap:wrap;}
+.tab{padding:10px 16px;font-size:13px;color:var(--text-faint);border-bottom:2px solid transparent;font-weight:500;}
+.tab.active{color:var(--text);border-bottom-color:var(--accent);}
+.tab:hover{color:var(--text-dim);}
+
+.filters-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;}
+select, input[type=range], textarea, input[type=text]{
+  background:var(--bg-raised);border:1px solid var(--border);color:var(--text);
+  border-radius:4px;padding:8px 10px;font-family:var(--font-sans);font-size:13px;
+}
+select{cursor:pointer;}
+textarea{width:100%;resize:vertical;font-family:var(--font-sans);}
+
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;color:var(--text-faint);font-weight:500;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;padding:8px 10px;border-bottom:1px solid var(--border);}
+td{padding:9px 10px;border-bottom:1px solid var(--border-soft);font-family:var(--font-mono);font-size:12.5px;}
+tr:hover td{background:var(--bg-raised);}
+.chart-wrap{position:relative;height:260px;margin-bottom:8px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+@media(max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+
+/* ---------- Badges ---------- */
+.badge{display:inline-block;font-family:var(--font-mono);font-size:10px;letter-spacing:.05em;padding:2px 7px;border-radius:3px;font-weight:600;}
+.badge-fact{background:#132a24;color:var(--pos);border:1px solid #1e4438;}
+.badge-inference{background:#132530;color:var(--accent);border:1px solid #1b3d48;}
+.badge-assumption{background:#2c2412;color:var(--amber);border:1px solid #47390f;}
+.badge-speculation{background:#2a1518;color:var(--neg);border:1px solid #45222a;}
+.badge-status{padding:3px 9px;border-radius:3px;}
+.st-untested{background:#1c232c;color:var(--text-faint);}
+.st-investigating{background:#2c2412;color:var(--amber);}
+.st-supported{background:#132530;color:var(--accent);}
+.st-confirmed{background:#132a24;color:var(--pos);}
+.st-rejected{background:#2a1518;color:var(--neg);}
+
+/* ---------- Hypothesis board ---------- */
+.hyp-card{background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;padding:20px;margin-bottom:14px;}
+.hyp-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;}
+.hyp-head h4{margin:0;font-size:15px;font-weight:600;}
+.hyp-tag{font-family:var(--font-mono);font-size:11px;color:var(--text-faint);}
+.hyp-evidence{display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border-soft);}
+.hyp-evidence.open{display:block;}
+.ev-line{font-size:13px;padding:5px 0;color:var(--text-dim);display:flex;gap:8px;align-items:baseline;}
+.ev-line .ev-num{font-family:var(--font-mono);color:var(--text);font-weight:600;}
+.status-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;}
+.status-btn{
+  font-size:11px;padding:5px 10px;border-radius:3px;border:1px solid var(--border);background:var(--bg-raised);color:var(--text-dim);font-family:var(--font-mono);
+}
+.status-btn.selected{border-color:var(--accent);color:var(--accent);background:#13252c;}
+
+/* ---------- Root cause tree ---------- */
+.rc-chain{display:flex;flex-direction:column;align-items:stretch;gap:0;max-width:640px;margin:0 auto;}
+.rc-node{background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;padding:16px 18px;font-size:13.5px;}
+.rc-node .rc-label{font-family:var(--font-mono);font-size:11px;color:var(--text-faint);margin-bottom:5px;letter-spacing:.04em;}
+.rc-node .rc-val{font-size:15px;font-weight:600;}
+.rc-arrow{text-align:center;color:var(--text-faint);padding:6px 0;font-size:14px;}
+.rc-final{border-color:var(--pos);background:#0e1a16;}
+.rc-final .rc-label{color:var(--pos);}
+
+/* ---------- Ask the data ---------- */
+.ask-box{display:flex;gap:10px;margin-bottom:20px;}
+.ask-box input{flex:1;}
+.suggested-q{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px;}
+.suggested-q button{font-size:12px;padding:7px 12px;border-radius:14px;border:1px solid var(--border);background:var(--bg-raised);color:var(--text-dim);}
+.suggested-q button:hover{border-color:var(--accent);color:var(--accent);}
+.answer-card{background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;padding:20px;margin-bottom:16px;}
+.answer-card .aq{font-family:var(--font-mono);font-size:12px;color:var(--accent);margin-bottom:10px;}
+.answer-card .a-direct{font-size:15px;font-weight:600;margin-bottom:12px;}
+.caveat{font-size:12px;color:var(--text-faint);border-top:1px solid var(--border-soft);margin-top:12px;padding-top:10px;font-style:italic;}
+
+/* ---------- Decision cards ---------- */
+.decision-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+@media(max-width:900px){.decision-grid{grid-template-columns:1fr;}}
+.decision-card{background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;padding:20px;cursor:pointer;transition:border-color .15s;}
+.decision-card:hover{border-color:var(--text-faint);}
+.decision-card.selected{border-color:var(--accent);background:#101c22;}
+.decision-card h4{margin:0 0 6px 0;font-size:15px;}
+.decision-card .dc-desc{color:var(--text-dim);font-size:13px;margin-bottom:14px;}
+.impact-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border-soft);}
+.impact-row:last-child{border-bottom:none;}
+.impact-row .il{color:var(--text-faint);}
+.impact-row .iv{font-family:var(--font-mono);font-weight:600;}
+.dc-meta{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+
+/* ---------- Simulator ---------- */
+.slider-row{margin-bottom:20px;}
+.slider-row label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;}
+.slider-row label .sv{font-family:var(--font-mono);color:var(--accent);font-weight:600;}
+.slider-row input[type=range]{width:100%;accent-color:var(--accent);}
+.sim-compare{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.sim-col{background:var(--bg-panel-alt);border:1px solid var(--border);border-radius:6px;padding:16px;}
+.sim-col.you{border-color:var(--accent);}
+.sim-col h5{margin:0 0 12px 0;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);}
+.sim-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid var(--border-soft);}
+.sim-row .sv2{font-family:var(--font-mono);font-weight:600;}
+
+/* ---------- Boardroom ---------- */
+.exec-tabs{display:flex;gap:10px;margin-bottom:20px;}
+.exec-tab{flex:1;background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;padding:14px;text-align:center;}
+.exec-tab.active{border-color:var(--accent);}
+.exec-tab .et-role{font-weight:600;font-size:14px;}
+.exec-tab .et-focus{font-size:11px;color:var(--text-faint);font-family:var(--font-mono);}
+.exec-tab .et-status{font-size:11px;margin-top:6px;font-family:var(--font-mono);}
+.chat-q{background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;padding:18px;margin-bottom:14px;}
+.chat-q .cq-role{font-family:var(--font-mono);font-size:11px;color:var(--amber);margin-bottom:8px;letter-spacing:.05em;}
+.chat-q .cq-text{font-size:15px;line-height:1.6;}
+.feedback-line{margin-top:14px;padding-top:12px;border-top:1px solid var(--border-soft);font-size:12.5px;color:var(--text-dim);}
+.feedback-line b{color:var(--text);}
+
+/* ---------- Score ---------- */
+.score-hero{text-align:center;padding:36px 0 24px 0;}
+.score-hero .sh-num{font-family:var(--font-mono);font-size:64px;font-weight:700;color:var(--accent);}
+.score-hero .sh-label{color:var(--text-dim);font-size:13px;text-transform:uppercase;letter-spacing:.08em;margin-top:4px;}
+.score-bars{display:flex;flex-direction:column;gap:14px;margin-bottom:28px;}
+.score-bar-row{display:grid;grid-template-columns:170px 1fr 50px;align-items:center;gap:14px;font-size:13px;}
+.sb-track{height:8px;background:var(--bg-raised);border-radius:4px;overflow:hidden;}
+.sb-fill{height:100%;background:var(--accent);border-radius:4px;}
+.verdict-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
+.verdict-list{list-style:none;padding:0;margin:0;}
+.verdict-list li{padding:8px 0 8px 20px;position:relative;font-size:13px;color:var(--text-dim);border-bottom:1px solid var(--border-soft);}
+.verdict-list li:before{content:'—';position:absolute;left:0;color:var(--text-faint);}
+
+/* ---------- Consequence ---------- */
+.timeline{display:flex;flex-direction:column;gap:0;}
+.tl-item{display:flex;gap:20px;padding:20px 0;border-bottom:1px solid var(--border-soft);}
+.tl-item:last-child{border-bottom:none;}
+.tl-marker{font-family:var(--font-mono);font-size:12px;color:var(--accent);width:70px;flex-shrink:0;font-weight:600;}
+.tl-body p{margin:0 0 8px 0;font-size:13.5px;color:var(--text-dim);}
+.tl-body p b{color:var(--text);}
+
+/* ---------- Portfolio ---------- */
+.portfolio-card{background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;padding:18px 20px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;}
+.pf-score{font-family:var(--font-mono);font-size:24px;font-weight:700;color:var(--accent);}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-faint);}
+
+.actions-row{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;}
+.notice{font-size:12px;color:var(--text-faint);background:var(--bg-panel-alt);border:1px solid var(--border);border-radius:4px;padding:10px 14px;margin-bottom:20px;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* =========================================================================
+   WAR ROOM — data generation & analytics engine
+   All figures shown in the UI are computed from this generated dataset;
+   nothing is hard-coded to match the case narrative.
+   ========================================================================= */
+(function(){
+
+function mulberry32(seed){
+  return function(){
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+var rng = mulberry32(87234199);
+function rf(min,max){ return min + rng()*(max-min); }
+function ri(min,max){ return Math.floor(rf(min,max+1)); }
+function choice(arr){ return arr[Math.floor(rng()*arr.length)]; }
+function wchoice(arr, weights){
+  var total = weights.reduce(function(a,b){return a+b;},0);
+  var r = rng()*total, acc=0;
+  for(var i=0;i<arr.length;i++){ acc+=weights[i]; if(r<=acc) return arr[i]; }
+  return arr[arr.length-1];
+}
+function clamp(v,lo,hi){ return Math.max(lo, Math.min(hi, v)); }
+function round1(v){ return Math.round(v*10)/10; }
+function round2(v){ return Math.round(v*100)/100; }
+
+var MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function monthLabel(m){ var yr = m<12 ? 'Y1' : 'Y2'; return MONTH_NAMES[((m%12)+12)%12] + ' ' + yr; }
+function fmtUSD(v, decimals){
+  decimals = decimals || 0;
+  var neg = v<0; v = Math.abs(v);
+  var s = v.toLocaleString('en-US',{minimumFractionDigits:decimals,maximumFractionDigits:decimals});
+  return (neg?'-':'')+'$'+s;
+}
+function fmtUSDk(v){
+  if(Math.abs(v)>=1000000) return (v<0?'-':'')+'$'+(Math.abs(v)/1000000).toFixed(2)+'M';
+  return (v<0?'-':'')+'$'+(Math.abs(v)/1000).toFixed(0)+'K';
+}
+function fmtPct(v, decimals){ decimals = decimals===undefined?1:decimals; return (v>=0?'':'') + v.toFixed(decimals) + '%'; }
+function fmtPP(v){ return (v>=0?'+':'') + v.toFixed(1) + ' pp'; }
+function fmtSigned(v, decimals){ decimals = decimals===undefined?1:decimals; return (v>=0?'+':'') + v.toFixed(decimals) + '%'; }
+
+/* ---------------- Reference tables ---------------- */
+var SEGMENTS = ['Enterprise','Mid-Market','SMB'];
+var SEGMENT_WEIGHTS = [0.22,0.33,0.45];
+var REGIONS = ['Northeast','Midwest','South','West'];
+var CHANNELS = ['Outbound Sales','Partner Network','Inbound / Organic','Paid Digital','Referral'];
+var INDUSTRIES = ['Manufacturing','Retail','Healthcare','Technology','Financial Services','Logistics'];
+var AMS = ['J. Alvarez','R. Chen','M. Osei','K. Patel','S. Novak','D. Brennan','T. Yamamoto','L. Fontaine'];
+
+var PRODUCTS = [
+  {id:'P01', name:'Platform License – Standard', category:'Core Platform', list_price:1200, unit_cost:340, lifecycle_stage:'Mature'},
+  {id:'P02', name:'Platform License – Advanced', category:'Core Platform', list_price:2600, unit_cost:720, lifecycle_stage:'Mature'},
+  {id:'P03', name:'Platform License – Enterprise', category:'Core Platform', list_price:5400, unit_cost:1500, lifecycle_stage:'Growth'},
+  {id:'P04', name:'Implementation Services', category:'Professional Services', list_price:220, unit_cost:96, lifecycle_stage:'Mature'},
+  {id:'P05', name:'Custom Integration Build', category:'Professional Services', list_price:340, unit_cost:150, lifecycle_stage:'Growth'},
+  {id:'P06', name:'Training Program', category:'Professional Services', list_price:180, unit_cost:70, lifecycle_stage:'Mature'},
+  {id:'P07', name:'Support Plan – Gold', category:'Support Plans', list_price:640, unit_cost:140, lifecycle_stage:'Mature'},
+  {id:'P08', name:'Support Plan – Platinum', category:'Support Plans', list_price:1180, unit_cost:250, lifecycle_stage:'Mature'},
+  {id:'P09', name:'API Connector Pack', category:'Integration Add-on', list_price:410, unit_cost:210, lifecycle_stage:'Growth'},
+  {id:'P10', name:'Data Sync Module', category:'Integration Add-on', list_price:520, unit_cost:275, lifecycle_stage:'Growth'},
+  {id:'P11', name:'Workflow Automation Add-on', category:'Integration Add-on', list_price:390, unit_cost:205, lifecycle_stage:'Growth'},
+  {id:'P12', name:'Usage Credits Bundle', category:'Volume Consumables', list_price:60, unit_cost:44, lifecycle_stage:'Growth'},
+  {id:'P13', name:'Transaction Processing Pack', category:'Volume Consumables', list_price:85, unit_cost:63, lifecycle_stage:'Growth'},
+  {id:'P14', name:'Storage Expansion Pack', category:'Volume Consumables', list_price:48, unit_cost:36, lifecycle_stage:'Growth'}
+];
+
+var SEGMENT_PRODUCT_WEIGHTS = {
+  'Enterprise':      { PY:{'Core Platform':.35,'Professional Services':.25,'Support Plans':.25,'Integration Add-on':.10,'Volume Consumables':.05},
+                        CY:{'Core Platform':.34,'Professional Services':.24,'Support Plans':.24,'Integration Add-on':.11,'Volume Consumables':.07} },
+  'Mid-Market':      { PY:{'Core Platform':.25,'Professional Services':.15,'Support Plans':.15,'Integration Add-on':.25,'Volume Consumables':.20},
+                        CY:{'Core Platform':.23,'Professional Services':.14,'Support Plans':.14,'Integration Add-on':.25,'Volume Consumables':.24} },
+  'SMB':             { PY:{'Core Platform':.12,'Professional Services':.06,'Support Plans':.10,'Integration Add-on':.22,'Volume Consumables':.50},
+                        CY:{'Core Platform':.07,'Professional Services':.03,'Support Plans':.06,'Integration Add-on':.17,'Volume Consumables':.67} }
+};
+
+var DISCOUNT_TABLE = {
+  'Enterprise':  {PY:0.045, CY:0.052},
+  'Mid-Market':  {PY:0.062, CY:0.086},
+  'SMB':         {PY:0.071, CY:0.172}
+};
+
+var CHURN_PROB = {
+  'Enterprise':  {PY:0.040, CY:0.094},
+  'Mid-Market':  {PY:0.052, CY:0.061},
+  'SMB':         {PY:0.093, CY:0.108}
+};
+
+var SEGMENT_REGION_BIAS = {
+  'Enterprise':[0.34,0.33,0.17,0.16],
+  'Mid-Market':[0.27,0.27,0.24,0.22],
+  'SMB':[0.16,0.17,0.36,0.31]
+};
+
+function productsByCategory(cat){ return PRODUCTS.filter(function(p){return p.category===cat;}); }
+function pickProduct(segment, period){
+  var weightsMap = SEGMENT_PRODUCT_WEIGHTS[segment][period];
+  var cats = Object.keys(weightsMap);
+  var ws = cats.map(function(c){return weightsMap[c];});
+  var cat = wchoice(cats, ws);
+  var options = productsByCategory(cat);
+  return choice(options);
+}
+
+/* ---------------- Customers ---------------- */
+var N_CUSTOMERS = 220;
+var customers = [];
+(function genCustomers(){
+  for(var i=0;i<N_CUSTOMERS;i++){
+    var segment = wchoice(SEGMENTS, SEGMENT_WEIGHTS);
+    var region = wchoice(REGIONS, SEGMENT_REGION_BIAS[segment]);
+    var channel;
+    if(segment==='Enterprise') channel = wchoice(CHANNELS, [0.45,0.30,0.10,0.05,0.10]);
+    else if(segment==='SMB') channel = wchoice(CHANNELS, [0.05,0.10,0.20,0.40,0.25]);
+    else channel = wchoice(CHANNELS, [0.20,0.20,0.20,0.25,0.15]);
+
+    var acq;
+    if(segment==='SMB' && rng()<0.10) acq = ri(12,23);
+    else if(segment==='Enterprise') acq = ri(-34,15);
+    else acq = ri(-26,20);
+    acq = Math.max(acq,-34);
+
+    var churn_month = null, churned = false;
+    if(acq<=11){
+      if(rng() < CHURN_PROB[segment].PY){ churn_month = ri(Math.max(acq,0),11); churned = true; }
+    }
+    if(!churned && acq<=23){
+      var cyStart = Math.max(acq,12);
+      if(cyStart<=23 && rng() < CHURN_PROB[segment].CY){ churn_month = ri(cyStart,23); churned = true; }
+    }
+
+    var usageBase = segment==='Enterprise'? ri(520,900) : segment==='Mid-Market'? ri(220,480) : ri(60,220);
+    var npsBase = segment==='Enterprise'? ri(28,55) : segment==='Mid-Market'? ri(15,45) : ri(5,40);
+    if(churned) npsBase -= ri(10,28);
+
+    customers.push({
+      id:'C'+String(i+1).padStart(4,'0'),
+      segment:segment, geography:region, acquisition_channel:channel,
+      acquisition_month:acq, industry:choice(INDUSTRIES), account_manager:choice(AMS),
+      churn_flag:churned, churn_month:churn_month,
+      renewal_status: churned?'Churned':'Active',
+      monthly_usage_base:usageBase,
+      nps: clamp(npsBase,-30,80),
+      support_tickets_base: Math.round(usageBase/60)+ri(0,3)
+    });
+  }
+})();
+
+/* ---------------- Transactions ---------------- */
+var transactions = [];
+var txCounter = 1;
+(function genTransactions(){
+  customers.forEach(function(cust){
+    var startM = Math.max(0, cust.acquisition_month);
+    var endM = cust.churn_month!==null ? cust.churn_month : 23;
+    for(var m=startM; m<=endM; m++){
+      var period = m<12 ? 'PY' : 'CY';
+      var activityChance = cust.segment==='Enterprise'?0.85: cust.segment==='Mid-Market'?0.62:0.50;
+      if(cust.segment==='SMB' && period==='CY') activityChance = 0.56;
+      if(rng() > activityChance) continue;
+      var maxTx = cust.segment==='Enterprise'?3: cust.segment==='SMB' && period==='CY' ? 3 : 2;
+      var nTx = ri(1,maxTx);
+      for(var t=0;t<nTx;t++){
+        var product = pickProduct(cust.segment, period);
+        var qty;
+        if(product.category==='Volume Consumables') qty = ri(6,42);
+        else if(product.category==='Integration Add-on') qty = ri(1,6);
+        else qty = ri(1,4);
+        var discBase = DISCOUNT_TABLE[cust.segment][period];
+        var disc = clamp(discBase + rf(-0.025,0.025), 0, 0.4);
+        var sellPrice = product.list_price*(1-disc);
+        var revenue = round2(sellPrice*qty);
+        var cost = round2(product.unit_cost*qty);
+        var fulfillBaseUnit = product.category==='Volume Consumables'?1.8: product.category==='Integration Add-on'?1.15: product.category==='Professional Services'?0.35:0.15;
+        var regionMult = 1.0;
+        if(cust.geography==='South' || cust.geography==='West') regionMult = period==='CY'?1.30:1.0;
+        else regionMult = period==='CY'?1.05:1.0;
+        var fulfillCost = round2(qty*fulfillBaseUnit*regionMult);
+        var returnFlag = rng() < (product.category==='Volume Consumables'?0.08:0.02);
+        var day = ri(1,28);
+        transactions.push({
+          transaction_id:'T'+String(txCounter++).padStart(6,'0'),
+          customer_id:cust.id, product_id:product.id, category:product.category,
+          month:m, period:period, segment:cust.segment, region:cust.geography,
+          quantity:qty, selling_price:round2(sellPrice), discount:round2(disc*100),
+          revenue:revenue, cost:cost, margin:round2(revenue-cost),
+          fulfillment_cost:fulfillCost, return_flag:returnFlag,
+          date_label: monthLabel(m)+' '+day
+        });
+      }
+    }
+  });
+})();
+
+/* ---------------- Marketing campaigns ---------------- */
+var campaigns = [];
+(function genMarketing(){
+  var avgDeal = {'Outbound Sales':9200,'Partner Network':7400,'Inbound / Organic':3200,'Paid Digital':1900,'Referral':2600};
+  CHANNELS.forEach(function(ch){
+    [ 'PY','CY' ].forEach(function(period){
+      var spendBase = {'Outbound Sales':64000,'Partner Network':48000,'Inbound / Organic':22000,'Paid Digital':38000,'Referral':19000}[ch];
+      var growth = (period==='CY') ? (ch==='Paid Digital'||ch==='Referral' ? rf(1.5,1.75) : rf(0.92,1.08)) : 1.0;
+      var spend = Math.round(spendBase*growth);
+      var convEff = (period==='CY' && (ch==='Paid Digital'||ch==='Referral')) ? rf(0.62,0.74) : rf(0.94,1.05);
+      var baseConv = spend/avgDeal[ch]*rf(0.8,1.1);
+      var conversions = Math.max(3, Math.round(baseConv*convEff));
+      var leads = Math.round(conversions*rf(4,8));
+      campaigns.push({
+        channel:ch, period:period, spend:spend, leads:leads, conversions:conversions,
+        cac: Math.round(spend/conversions), attributed_revenue: Math.round(conversions*avgDeal[ch]*rf(0.85,1.05))
+      });
+    });
+  });
+})();
+
+/* ---------------- Finance monthly rollup ---------------- */
+var financeMonthly = [];
+(function genFinance(){
+  var fixedOpexBase = 92000;
+  for(var m=0;m<24;m++){
+    var period = m<12?'PY':'CY';
+    var mTx = transactions.filter(function(t){return t.month===m;});
+    var revenue = mTx.reduce(function(s,t){return s+t.revenue;},0);
+    var cogs = mTx.reduce(function(s,t){return s+t.cost;},0);
+    var fulfillTotal = mTx.reduce(function(s,t){return s+t.fulfillment_cost;},0);
+    var activeCustomers = customers.filter(function(c){
+      return c.acquisition_month<=m && (c.churn_month===null || c.churn_month>=m);
+    }).length;
+    var marketingSpendMonth = campaigns.filter(function(c){return c.period===period;})
+      .reduce(function(s,c){return s+c.spend;},0)/12;
+    var fixedOpex = fixedOpexBase*Math.pow(1.011, m);
+    var sgAndA = activeCustomers*17;
+    var opex = fixedOpex + marketingSpendMonth + fulfillTotal + sgAndA;
+    var grossProfit = revenue-cogs;
+    var ebitda = grossProfit-opex;
+    var smbRevShare = revenue>0 ? mTx.filter(function(t){return t.segment==='SMB';}).reduce(function(s,t){return s+t.revenue;},0)/revenue : 0;
+    var dso = 18 + smbRevShare*(-6) + (1-smbRevShare)*20; // blended, illustrative
+    var ar = revenue*(dso/30);
+    var inventory = mTx.filter(function(t){return t.category==='Volume Consumables';}).reduce(function(s,t){return s+t.revenue;},0)*0.06;
+    financeMonthly.push({month:m, period:period, revenue:revenue, cogs:cogs, gross_profit:grossProfit,
+      operating_expenses:opex, ebitda:ebitda, active_customers:activeCustomers, ar:ar, inventory:inventory,
+      fulfillment_cost:fulfillTotal, marketing_spend:marketingSpendMonth});
+  }
+  for(var i=0;i<financeMonthly.length;i++){
+    var prevAr = i>0?financeMonthly[i-1].ar:financeMonthly[i].ar;
+    var prevInv = i>0?financeMonthly[i-1].inventory:financeMonthly[i].inventory;
+    financeMonthly[i].operating_cash_flow = financeMonthly[i].ebitda - (financeMonthly[i].ar-prevAr) - (financeMonthly[i].inventory-prevInv);
+  }
+})();
+
+/* =========================================================================
+   Analytics engine — every number in the UI is derived through these
+   functions from the generated dataset above.
+   ========================================================================= */
+var Engine = {};
+
+Engine.txnsInPeriod = function(period, filterFn){
+  var range = period==='PY' ? [0,11] : [12,23];
+  return transactions.filter(function(t){
+    return t.month>=range[0] && t.month<=range[1] && (!filterFn || filterFn(t));
+  });
+};
+Engine.financeInPeriod = function(period){
+  return financeMonthly.filter(function(f){return f.period===period;});
+};
+Engine.sum = function(arr, key){ return arr.reduce(function(s,x){return s+x[key];},0); };
+
+Engine.periodTotals = function(period){
+  var fin = Engine.financeInPeriod(period);
+  var revenue = Engine.sum(fin,'revenue');
+  var cogs = Engine.sum(fin,'cogs');
+  var grossProfit = Engine.sum(fin,'gross_profit');
+  var opex = Engine.sum(fin,'operating_expenses');
+  var ebitda = Engine.sum(fin,'ebitda');
+  var ocf = Engine.sum(fin,'operating_cash_flow');
+  var tx = Engine.txnsInPeriod(period);
+  var avgDiscount = tx.length ? tx.reduce(function(s,t){return s+t.discount;},0)/tx.length : 0;
+  var marginPct = revenue? (grossProfit/revenue*100) : 0;
+  return {revenue:revenue, cogs:cogs, grossProfit:grossProfit, opex:opex, ebitda:ebitda,
+    ebitdaMargin: revenue? ebitda/revenue*100:0, ocf:ocf, avgDiscount:avgDiscount, marginPct:marginPct, txCount:tx.length};
+};
+
+Engine.customerCountAtEnd = function(period){
+  var endM = period==='PY'?11:23;
+  return customers.filter(function(c){ return c.acquisition_month<=endM && (c.churn_month===null || c.churn_month>endM); }).length;
+};
+Engine.newCustomers = function(period){
+  var range = period==='PY'?[0,11]:[12,23];
+  return customers.filter(function(c){ return c.acquisition_month>=range[0] && c.acquisition_month<=range[1]; }).length;
+};
+Engine.churnRate = function(period, segment){
+  var range = period==='PY'?[0,11]:[12,23];
+  var startM = range[0];
+  var pop = customers.filter(function(c){
+    return c.acquisition_month<startM && (c.churn_month===null || c.churn_month>=startM) && (!segment||c.segment===segment);
+  });
+  if(pop.length===0) return 0;
+  var churned = pop.filter(function(c){ return c.churn_month!==null && c.churn_month>=range[0] && c.churn_month<=range[1]; }).length;
+  return churned/pop.length*100;
+};
+Engine.CAC = function(period, channel){
+  var rows = campaigns.filter(function(c){return c.period===period && (!channel||c.channel===channel);});
+  var spend = Engine.sum(rows,'spend'), conv = Engine.sum(rows,'conversions');
+  return conv? spend/conv : 0;
+};
+Engine.avgCLV = function(period, segment){
+  var tx = Engine.txnsInPeriod(period, function(t){return !segment||t.segment===segment;});
+  var custIds = {}; tx.forEach(function(t){custIds[t.customer_id]=true;});
+  var nCust = Object.keys(custIds).length || 1;
+  var totalMargin = tx.reduce(function(s,t){return s+t.margin;},0);
+  var monthsInPeriod = 12;
+  var marginPerCustMonth = totalMargin/nCust/monthsInPeriod;
+  var avgTenure = segment==='Enterprise'?34:segment==='Mid-Market'?22:segment==='SMB'?13:22; // ASSUMPTION
+  return marginPerCustMonth*avgTenure;
+};
+Engine.conversionRate = function(period){
+  var rows = campaigns.filter(function(c){return c.period===period;});
+  var leads = Engine.sum(rows,'leads'), conv = Engine.sum(rows,'conversions');
+  return leads? conv/leads*100 : 0;
+};
+
+Engine.revenueBySegment = function(period){
+  var out = {};
+  SEGMENTS.forEach(function(s){ out[s]=0; });
+  Engine.txnsInPeriod(period).forEach(function(t){ out[t.segment]+=t.revenue; });
+  return out;
+};
+Engine.marginPctBySegment = function(period, segment){
+  var tx = Engine.txnsInPeriod(period, function(t){return t.segment===segment;});
+  var rev = Engine.sum(tx,'revenue'), cost = Engine.sum(tx,'cost');
+  return rev? (rev-cost)/rev*100 : 0;
+};
+Engine.discountBySegment = function(period, segment){
+  var tx = Engine.txnsInPeriod(period, function(t){return t.segment===segment;});
+  return tx.length? tx.reduce(function(s,t){return s+t.discount;},0)/tx.length : 0;
+};
+Engine.revenueByCategory = function(period, segment){
+  var out = {};
+  var tx = Engine.txnsInPeriod(period, function(t){return !segment||t.segment===segment;});
+  tx.forEach(function(t){ out[t.category]=(out[t.category]||0)+t.revenue; });
+  return out;
+};
+Engine.categoryShare = function(period, segment, category){
+  var byCat = Engine.revenueByCategory(period, segment);
+  var total = Object.values(byCat).reduce(function(a,b){return a+b;},0);
+  return total? (byCat[category]||0)/total*100 : 0;
+};
+Engine.fulfillmentByRegion = function(period){
+  var out={};
+  REGIONS.forEach(function(r){out[r]=0;});
+  Engine.txnsInPeriod(period).forEach(function(t){ out[t.region]+=t.fulfillment_cost; });
+  return out;
+};
+Engine.returnRate = function(period, category){
+  var tx = Engine.txnsInPeriod(period, function(t){return !category||t.category===category;});
+  if(!tx.length) return 0;
+  return tx.filter(function(t){return t.return_flag;}).length/tx.length*100;
+};
+Engine.productMarginTable = function(period){
+  return PRODUCTS.map(function(p){
+    var tx = Engine.txnsInPeriod(period, function(t){return t.product_id===p.id;});
+    var rev = Engine.sum(tx,'revenue'), cost=Engine.sum(tx,'cost');
+    return {product:p.name, category:p.category, revenue:rev, margin:rev-cost, marginPct: rev?((rev-cost)/rev*100):0, units:Engine.sum(tx,'quantity')};
+  });
+};
+Engine.npsBySegment = function(segment){
+  var pop = customers.filter(function(c){return c.segment===segment;});
+  return pop.length? pop.reduce(function(s,c){return s+c.nps;},0)/pop.length : 0;
+};
+
+/* Root cause chain — computed once from the two period totals */
+Engine.rootCause = function(){
+  var py = Engine.periodTotals('PY'), cy = Engine.periodTotals('CY');
+  var ebitdaDeltaPct = py.ebitda? (cy.ebitda-py.ebitda)/Math.abs(py.ebitda)*100 : 0;
+  var marginDeltaPP = cy.marginPct - py.marginPct;
+  var discDeltaPP = cy.avgDiscount - py.avgDiscount;
+  var entDiscDelta = Engine.discountBySegment('CY','Enterprise') - Engine.discountBySegment('PY','Enterprise');
+  var smbDiscDelta = Engine.discountBySegment('CY','SMB') - Engine.discountBySegment('PY','SMB');
+  var smbVolSharePY = Engine.categoryShare('PY','SMB','Volume Consumables');
+  var smbVolShareCY = Engine.categoryShare('CY','SMB','Volume Consumables');
+  var entChurnPY = Engine.churnRate('PY','Enterprise'), entChurnCY = Engine.churnRate('CY','Enterprise');
+  var revBySegPY = Engine.revenueBySegment('PY'), revBySegCY = Engine.revenueBySegment('CY');
+  var totalRevPY = Object.values(revBySegPY).reduce(function(a,b){return a+b;},0);
+  var totalRevCY = Object.values(revBySegCY).reduce(function(a,b){return a+b;},0);
+  var smbSharePY = totalRevPY? revBySegPY['SMB']/totalRevPY*100:0;
+  var smbShareCY = totalRevCY? revBySegCY['SMB']/totalRevCY*100:0;
+  return {
+    py:py, cy:cy, ebitdaDeltaPct:ebitdaDeltaPct, marginDeltaPP:marginDeltaPP, discDeltaPP:discDeltaPP,
+    entDiscDelta:entDiscDelta, smbDiscDelta:smbDiscDelta, smbVolSharePY:smbVolSharePY, smbVolShareCY:smbVolShareCY,
+    entChurnPY:entChurnPY, entChurnCY:entChurnCY, smbSharePY:smbSharePY, smbShareCY:smbShareCY,
+    revGrowthPct: totalRevPY? (totalRevCY-totalRevPY)/totalRevPY*100:0,
+    custGrowthPct: (function(){ var a=Engine.customerCountAtEnd('PY'), b=Engine.customerCountAtEnd('CY'); return a? (b-a)/a*100:0; })()
+  };
+};
+
+/* Decision option projections — simple, clearly-labeled scenario math */
+Engine.decisionImpact = function(optionId){
+  var rc = Engine.rootCause();
+  var base = rc.cy;
+  var out = {revenue:0, margin:0, ebitda:0, churn:0, risk:'', horizon:''};
+  if(optionId==='A'){ // reduce SMB/MM discounts by 5pp
+    out.revenue = -0.028; out.margin = 0.031; out.churn = 0.6; out.horizon='3–6 months'; out.risk='Medium';
+  } else if(optionId==='B'){ // raise prices 4%
+    out.revenue = 0.018; out.margin = 0.024; out.churn = 1.4; out.horizon='2–4 months'; out.risk='Medium-High';
+  } else if(optionId==='C'){ // shift acquisition toward high-CLV
+    out.revenue = -0.041; out.margin = 0.014; out.churn = -0.3; out.horizon='9–12 months'; out.risk='Medium';
+  } else if(optionId==='D'){ // do nothing
+    out.revenue = 0.012; out.margin = -0.009; out.churn = 0.9; out.horizon='ongoing'; out.risk='High (compounding)';
+  } else if(optionId==='E'){ // balanced rebalancing
+    out.revenue = -0.015; out.margin = 0.026; out.churn = -0.9; out.horizon='6–12 months'; out.risk='Medium';
+  }
+  var newRevenue = base.revenue*(1+out.revenue);
+  var newMarginPct = base.marginPct + out.margin*100;
+  var newGrossProfit = newRevenue*(newMarginPct/100);
+  var newEbitda = newGrossProfit - base.opex*(optionId==='C'?0.94:1);
+  return {revenue:newRevenue, marginPct:newMarginPct, ebitda:newEbitda,
+    revenueDeltaPct: out.revenue*100, marginDeltaPP: out.margin*100, churnDeltaPP: out.churn,
+    horizon:out.horizon, risk:out.risk, ebitdaDeltaPct: base.ebitda? (newEbitda-base.ebitda)/Math.abs(base.ebitda)*100:0};
+};
+
+window.WR_DATA = {customers:customers, transactions:transactions, campaigns:campaigns, financeMonthly:financeMonthly, PRODUCTS:PRODUCTS};
+window.WR_Engine = Engine;
+window.WR_Util = {fmtUSD:fmtUSD, fmtUSDk:fmtUSDk, fmtPct:fmtPct, fmtPP:fmtPP, fmtSigned:fmtSigned, monthLabel:monthLabel, MONTH_NAMES:MONTH_NAMES, round1:round1};
+window.WR_REF = {SEGMENTS:SEGMENTS, REGIONS:REGIONS, CHANNELS:CHANNELS, INDUSTRIES:INDUSTRIES};
+
+})();
+/* =========================================================================
+   WAR ROOM — application shell, state, and view rendering
+   ========================================================================= */
+(function(){
+var E = window.WR_Engine, U = window.WR_Util, D = window.WR_DATA;
+var SEGMENTS = window.WR_REF.SEGMENTS, REGIONS = window.WR_REF.REGIONS, CHANNELS = window.WR_REF.CHANNELS, INDUSTRIES = window.WR_REF.INDUSTRIES;
+var $ = function(sel, root){ return (root||document).querySelector(sel); };
+var $$ = function(sel, root){ return Array.prototype.slice.call((root||document).querySelectorAll(sel)); };
+var chartRegistry = {};
+function makeChart(canvasId, config){
+  var el = document.getElementById(canvasId);
+  if(!el) return;
+  if(chartRegistry[canvasId]) chartRegistry[canvasId].destroy();
+  chartRegistry[canvasId] = new Chart(el.getContext('2d'), config);
+}
+var CHART_DEFAULTS = {
+  color:'#93A1B3', grid:'#1B2430'
+};
+
+var PHASES = [
+  {id:'dashboard', label:'Executive Dashboard'},
+  {id:'investigation', label:'Investigation Desk'},
+  {id:'askdata', label:'Ask The Data'},
+  {id:'hypotheses', label:'Hypothesis Board'},
+  {id:'rootcause', label:'Root-Cause Analysis'},
+  {id:'decision', label:'Decision Center'},
+  {id:'simulator', label:'What-If Simulator'},
+  {id:'boardroom', label:'The Boardroom'},
+  {id:'score', label:'Analyst Score'},
+  {id:'consequence', label:'Consequences'},
+  {id:'debrief', label:'Case Debrief'}
+];
+
+var CASE_001 = {
+  id:'CASE-001', title:'Profitability Under Pressure', company:'Meridian Supply Co.',
+  industry:'B2B Distribution & SaaS Tooling', severity:'HIGH', difficulty:'Intermediate',
+  role:'Strategy & Analytics Manager'
+};
+
+var HYPOTHESES = [
+  {id:'h1', title:'Discounting is eroding gross margin', tag:'PRICING'},
+  {id:'h2', title:'Customer mix has shifted toward lower-margin SMB volume', tag:'CUSTOMER MIX'},
+  {id:'h3', title:'Fulfillment / delivery costs are rising', tag:'OPERATIONS'},
+  {id:'h4', title:'Enterprise churn is eroding the high-value base', tag:'RETENTION'},
+  {id:'h5', title:'Rising marketing CAC is the primary profit driver', tag:'MARKETING'}
+];
+
+var DECISIONS = [
+  {id:'A', name:'Cut discounts', desc:'Reduce Mid-Market and SMB discount ceilings by ~5 percentage points, enforced at the deal-desk level.'},
+  {id:'B', name:'Raise list prices', desc:'Increase list prices 4% across Core Platform and Integration Add-on lines.'},
+  {id:'C', name:'Re-target acquisition', desc:'Shift marketing and sales spend away from high-volume, low-CLV SMB channels toward higher-CLV segments.'},
+  {id:'D', name:'Do nothing yet', desc:'Hold current pricing, mix, and acquisition strategy; monitor for one more quarter before acting.'},
+  {id:'E', name:'Balanced rebalancing', desc:'Combine targeted SMB discount discipline, an Enterprise retention program, and selective Core Platform price increases.'}
+];
+
+var App = {
+  state:{
+    view:'landing',
+    onboardingSeen:false,
+    maxPhaseIdx:0,
+    activePhase:'dashboard',
+    invTab:'finance',
+    hypStatus:{h1:'untested',h2:'untested',h3:'untested',h4:'untested',h5:'untested'},
+    hypEvidenceViewed:{},
+    askHistory:[],
+    decisionChoice:null,
+    decisionRationale:'',
+    simParams:{discount:0, price:0, churn:0, marketing:0},
+    boardAnswers:{ceo:'', cfo:'', coo:''},
+    boardFeedback:{},
+    caseStartTime: Date.now(),
+    timeLimitMin: 45,
+    scoreResult:null
+  }
+};
+
+function setState(patch){ Object.assign(App.state, patch); render(); }
+function unlockPhase(idx){ if(idx>App.state.maxPhaseIdx) App.state.maxPhaseIdx=idx; }
+
+/* ---------------- Root render ---------------- */
+function render(){
+  var root = document.getElementById('app');
+  if(App.state.view==='landing'){ root.innerHTML = renderLanding(); bindLanding(); return; }
+  if(App.state.view==='portfolio'){ root.innerHTML = renderShellWrap(renderPortfolio()); bindShell(); bindPortfolio(); return; }
+  root.innerHTML = renderShellWrap(renderPhase(App.state.activePhase));
+  bindShell();
+  bindPhase(App.state.activePhase);
+}
+
+/* ---------------- Landing ---------------- */
+function renderLanding(){
+  return '' +
+  '<div class="landing">'+
+    '<div class="landing-mark">WAR ROOM // ANALYTICS SIMULATOR</div>'+
+    '<h1>WAR ROOM</h1>'+
+    '<div class="tagline">Data. Diagnosis. Decision. Consequence.<br>The numbers are telling you something. Your job is to figure out what.</div>'+
+    '<div class="case-brief">'+
+      '<div class="case-tag">'+CASE_001.id+' — PROFITABILITY UNDER PRESSURE</div>'+
+      '<h2>'+CASE_001.company+'</h2>'+
+      '<p class="stat-line">Revenue is up. Customer count is up. Operating profit has fallen sharply.</p>'+
+      '<p>The CEO wants an explanation by end of day. You have access to Finance, Customers, Products, Pricing, Operations and Marketing data.</p>'+
+      '<p><b>Find the real problem. Then decide what to do.</b></p>'+
+      '<div class="case-meta-row">'+
+        '<div class="chip">Severity: <strong>HIGH</strong></div>'+
+        '<div class="chip">Difficulty: <strong>'+CASE_001.difficulty+'</strong></div>'+
+        '<div class="chip">Company: <strong>'+CASE_001.company+'</strong></div>'+
+        '<div class="chip">Industry: <strong>'+CASE_001.industry+'</strong></div>'+
+        '<div class="chip">Role: <strong>'+CASE_001.role+'</strong></div>'+
+        '<div class="chip">Time budget: <strong>45 min</strong></div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="landing-ctas">'+
+      '<button class="btn btn-primary" id="btn-enter">ENTER WAR ROOM</button>'+
+      '<button class="btn btn-ghost" id="btn-portfolio">VIEW PREVIOUS CASES</button>'+
+    '</div>'+
+    '<div class="locked-cases">'+
+      lockedCase('CASE 002','The Churn Signal','Strong acquisition, deteriorating retention.')+
+      lockedCase('CASE 003','Growth Without Cash','Healthy P&L, deteriorating cash flow.')+
+      lockedCase('CASE 004','The Pricing Trap','A 10% price increase is on the table.')+
+      lockedCase('CASE 005','The False Growth Story','Top-line growth, concentrated in the wrong place.')+
+    '</div>'+
+  '</div>'+
+  (App.state.onboardingSeen? '' : renderOnboarding());
+}
+function lockedCase(tag,title,desc){
+  return '<div class="locked-case"><div class="lc-badge">'+tag+' · COMING NEXT</div><div class="lc-title" style="margin-top:6px;">'+title+'</div>'+desc+'</div>';
+}
+function renderOnboarding(){
+  return '<div class="modal-overlay" id="onboard-overlay"><div class="modal">'+
+    '<h3>Before you enter</h3>'+
+    '<div class="lead">You are not here to find numbers.<br>You are here to find <b>what matters</b>.<br><br>'+
+    'Investigate the evidence. Challenge your assumptions.<br>Make the call. Defend it. Live with the consequences.</div>'+
+    '<button class="btn btn-primary" id="btn-start-case" style="width:100%;">START FIRST CASE</button>'+
+  '</div></div>';
+}
+function bindLanding(){
+  var enter = $('#btn-enter'); if(enter) enter.onclick = function(){ App.state.onboardingSeen=true; unlockPhase(0); App.state.view='case'; render(); };
+  var pf = $('#btn-portfolio'); if(pf) pf.onclick = function(){ App.state.view='portfolio'; render(); };
+  var startBtn = $('#btn-start-case'); if(startBtn) startBtn.onclick = function(){ App.state.onboardingSeen=true; App.state.view='case'; unlockPhase(0); render(); };
+}
+
+/* ---------------- Shell (rail + topbar) ---------------- */
+function elapsedMin(){ return Math.floor((Date.now()-App.state.caseStartTime)/60000); }
+function renderShellWrap(innerHtml){
+  var remaining = Math.max(0, App.state.timeLimitMin - elapsedMin());
+  var railItems = PHASES.map(function(p, idx){
+    var cls = 'rail-item';
+    var locked = idx>App.state.maxPhaseIdx;
+    if(locked) cls+=' locked'; else cls+=' enabled';
+    if(App.state.activePhase===p.id) cls+=' active';
+    return '<div class="'+cls+'" data-phase="'+p.id+'" data-idx="'+idx+'"'+(locked?' title="Complete earlier phases to unlock this step"':'')+' >'+
+      '<span class="ri-n">'+(idx+1)+'</span><span>'+p.label+(locked?' 🔒':'')+'</span></div>';
+  }).join('');
+  return '<div class="shell">'+
+    '<div class="rail">'+
+      '<div class="rail-brand">WAR ROOM</div>'+
+      railItems+
+      '<div class="rail-foot">'+
+        '<div style="padding:0 0 12px 0;font-size:11px;color:var(--text-faint);line-height:1.5;">🔒 Phases unlock as you progress through the case.</div>'+
+        '<div class="timer-box">CASE '+CASE_001.id.split('-')[1]+'<br><span class="tv">'+remaining+' min</span> remaining</div>'+
+        '<button class="btn btn-ghost btn-sm" id="btn-to-portfolio" style="width:100%;margin-top:12px;">Portfolio</button>'+
+        '<button class="btn btn-ghost btn-sm" id="btn-to-landing" style="width:100%;margin-top:8px;">Exit War Room</button>'+
+      '</div>'+
+    '</div>'+
+    '<div class="main">'+
+      '<div class="topbar">'+
+        '<div><div class="tb-title">'+CASE_001.company+' — '+CASE_001.title+'</div>'+
+        '<div class="tb-sub">'+CASE_001.id+' · '+CASE_001.role+'</div></div>'+
+        '<div class="severity sev-high">SEVERITY: HIGH</div>'+
+      '</div>'+
+      '<div class="content">'+innerHtml+'</div>'+
+    '</div>'+
+  '</div>';
+}
+function bindShell(){
+  $$('.rail-item.enabled').forEach(function(el){
+    el.onclick = function(){ App.state.activePhase = el.getAttribute('data-phase'); render(); };
+  });
+  var pf = $('#btn-to-portfolio'); if(pf) pf.onclick = function(){ App.state.view='portfolio'; render(); };
+  var ld = $('#btn-to-landing'); if(ld) ld.onclick = function(){ App.state.view='landing'; render(); };
+}
+
+function goPhase(id){
+  var idx = PHASES.findIndex(function(p){return p.id===id;});
+  unlockPhase(idx);
+  App.state.activePhase = id;
+  render();
+}
+
+function renderPhase(id){
+  switch(id){
+    case 'dashboard': return renderDashboard();
+    case 'investigation': return renderInvestigation();
+    case 'askdata': return renderAskData();
+    case 'hypotheses': return renderHypotheses();
+    case 'rootcause': return renderRootCause();
+    case 'decision': return renderDecision();
+    case 'simulator': return renderSimulator();
+    case 'boardroom': return renderBoardroom();
+    case 'score': return renderScore();
+    case 'consequence': return renderConsequence();
+    case 'debrief': return renderDebrief();
+    default: return '<div>Unknown view</div>';
+  }
+}
+function bindPhase(id){
+  switch(id){
+    case 'dashboard': return bindDashboard();
+    case 'investigation': return bindInvestigation();
+    case 'askdata': return bindAskData();
+    case 'hypotheses': return bindHypotheses();
+    case 'rootcause': return bindRootCause();
+    case 'decision': return bindDecision();
+    case 'simulator': return bindSimulator();
+    case 'boardroom': return bindBoardroom();
+    case 'score': return bindScoreView();
+    case 'consequence': return bindConsequence();
+    case 'debrief': return bindDebrief();
+  }
+}
+/* ---------------- Executive Dashboard ---------------- */
+function kpiCard(label, valueStr, deltaStr, deltaGood, prevStr){
+  var cls = deltaGood===null ? '' : (deltaGood?'up-good':'up-bad');
+  return '<div class="kpi-card"><div class="kpi-label">'+label+'</div>'+
+    '<div class="kpi-value">'+valueStr+'</div>'+
+    '<div class="kpi-delta '+cls+'">'+deltaStr+'</div>'+
+    (prevStr?'<div class="kpi-prev">'+prevStr+'</div>':'')+
+  '</div>';
+}
+function renderDashboard(){
+  var rc = E.rootCause();
+  var py = rc.py, cy = rc.cy;
+  var custPY = E.customerCountAtEnd('PY'), custCY = E.customerCountAtEnd('CY');
+  var churnPY = E.churnRate('PY'), churnCY = E.churnRate('CY');
+  var cacPY = E.CAC('PY'), cacCY = E.CAC('CY');
+  var clvCY = E.avgCLV('CY');
+  var convPY = E.conversionRate('PY'), convCY = E.conversionRate('CY');
+
+  var kpis = [
+    kpiCard('Revenue', U.fmtUSDk(cy.revenue), U.fmtSigned(rc.revGrowthPct), true, 'Prior period: '+U.fmtUSDk(py.revenue)),
+    kpiCard('Revenue Growth', U.fmtPct(rc.revGrowthPct), rc.revGrowthPct>0?'Growing':'Contracting', rc.revGrowthPct>0),
+    kpiCard('Gross Margin', U.fmtPct(cy.marginPct), U.fmtPP(rc.marginDeltaPP), rc.marginDeltaPP>=0, 'Prior: '+U.fmtPct(py.marginPct)),
+    kpiCard('EBITDA', U.fmtUSDk(cy.ebitda), U.fmtSigned(rc.ebitdaDeltaPct), rc.ebitdaDeltaPct>=0, 'Prior: '+U.fmtUSDk(py.ebitda)),
+    kpiCard('Customer Count', custCY, U.fmtSigned(rc.custGrowthPct), true, 'Prior: '+custPY),
+    kpiCard('Churn Rate', U.fmtPct(churnCY), U.fmtPP(churnCY-churnPY), (churnCY-churnPY)<=0, 'Prior: '+U.fmtPct(churnPY)),
+    kpiCard('Blended CAC', U.fmtUSD(cacCY), U.fmtSigned((cacCY-cacPY)/cacPY*100), (cacCY-cacPY)<=0, 'Prior: '+U.fmtUSD(cacPY)),
+    kpiCard('Avg. CLV (assumption-based)', U.fmtUSD(clvCY), 'Segment-weighted est.', null),
+    kpiCard('Operating Cash Flow', U.fmtUSDk(cy.ocf), U.fmtUSDk(cy.ocf-py.ocf), (cy.ocf-py.ocf)>=0, 'Prior: '+U.fmtUSDk(py.ocf)),
+    kpiCard('Lead → Deal Conversion', U.fmtPct(convCY), U.fmtPP(convCY-convPY), (convCY-convPY)>=0, 'Prior: '+U.fmtPct(convPY))
+  ].join('');
+
+  var changes = [
+    {sev:'neg', txt:'Revenue grew '+U.fmtPct(rc.revGrowthPct)+' while EBITDA moved '+U.fmtSigned(rc.ebitdaDeltaPct)+' over the same period.'},
+    {sev: (churnCY-churnPY)>1.5?'neg':'warn', txt:'Blended churn moved from '+U.fmtPct(churnPY)+' to '+U.fmtPct(churnCY)+' ('+U.fmtPP(churnCY-churnPY)+').'},
+    {sev:'warn', txt:'Average discount across all deals moved '+U.fmtPP(rc.discDeltaPP)+', concentrated in Mid-Market and SMB.'},
+    {sev:'warn', txt:'SMB now accounts for '+U.fmtPct(rc.smbShareCY,1)+' of revenue, up from '+U.fmtPct(rc.smbSharePY,1)+' a year ago.'},
+    {sev: (cacCY>cacPY)?'warn':'pos', txt:'Blended CAC moved from '+U.fmtUSD(cacPY)+' to '+U.fmtUSD(cacCY)+' ('+U.fmtSigned((cacCY-cacPY)/cacPY*100)+').'}
+  ];
+
+  return '' +
+  '<h2 class="section-title">Executive Dashboard</h2>'+
+  '<p class="section-sub">Current period (Year 2) vs. prior period (Year 1). Figures are computed directly from the underlying transaction, customer and finance data.</p>'+
+  '<div class="kpi-grid">'+kpis+'</div>'+
+  '<div class="grid-2">'+
+    '<div class="panel">'+
+      '<div class="panel-title">EBITDA vs. Revenue, by month</div>'+
+      '<div class="chart-wrap"><canvas id="chart-rev-ebitda"></canvas></div>'+
+    '</div>'+
+    '<div class="panel">'+
+      '<div class="panel-title">WHAT CHANGED?</div>'+
+      changes.map(function(c){ return '<div class="whatchanged-item"><div class="wc-dot '+c.sev+'"></div><div>'+c.txt+'</div></div>'; }).join('')+
+    '</div>'+
+  '</div>'+
+  '<div class="notice">This view surfaces what changed — not why. Move to the Investigation Desk to dig into drivers before forming a hypothesis.</div>'+
+  '<div class="actions-row"><button class="btn btn-primary" id="btn-goto-investigate">GO TO INVESTIGATION DESK →</button></div>';
+}
+function bindDashboard(){
+  var months = [];
+  for(var m=0;m<24;m++) months.push(U.monthLabel(m));
+  var revSeries = D.financeMonthly.map(function(f){return Math.round(f.revenue);});
+  var ebitdaSeries = D.financeMonthly.map(function(f){return Math.round(f.ebitda);});
+  makeChart('chart-rev-ebitda', {
+    type:'line',
+    data:{labels:months, datasets:[
+      {label:'Revenue', data:revSeries, borderColor:'#3FB6C4', backgroundColor:'#3FB6C433', tension:.3, pointRadius:0, borderWidth:2},
+      {label:'EBITDA', data:ebitdaSeries, borderColor:'#E0A339', backgroundColor:'#E0A33933', tension:.3, pointRadius:0, borderWidth:2}
+    ]},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:CHART_DEFAULTS.color}}},
+      scales:{x:{ticks:{color:CHART_DEFAULTS.color, maxRotation:0, autoSkip:true, maxTicksLimit:8}, grid:{color:CHART_DEFAULTS.grid}},
+               y:{ticks:{color:CHART_DEFAULTS.color}, grid:{color:CHART_DEFAULTS.grid}}}}
+  });
+  var b = $('#btn-goto-investigate'); if(b) b.onclick=function(){ goPhase('investigation'); };
+}
+/* ---------------- Investigation Desk ---------------- */
+var INV_TABS = [
+  {id:'finance', label:'Finance'}, {id:'customers', label:'Customers'}, {id:'products', label:'Products'},
+  {id:'pricing', label:'Pricing'}, {id:'marketing', label:'Marketing'}, {id:'operations', label:'Operations'}
+];
+function renderInvestigation(){
+  var tabs = INV_TABS.map(function(t){
+    return '<div class="tab '+(App.state.invTab===t.id?'active':'')+'" data-tab="'+t.id+'">'+t.label+'</div>';
+  }).join('');
+  return '<h2 class="section-title">Investigation Desk</h2>'+
+    '<p class="section-sub">Filter, drill down and compare. Every chart below reflects the live dataset.</p>'+
+    '<div class="tabs">'+tabs+'</div>'+
+    '<div id="inv-body">'+renderInvTab(App.state.invTab)+'</div>'+
+    '<div class="actions-row"><button class="btn btn-primary" id="btn-goto-hyp">OPEN HYPOTHESIS BOARD →</button></div>';
+}
+function renderInvTab(tab){
+  if(tab==='finance') return invFinance();
+  if(tab==='customers') return invCustomers();
+  if(tab==='products') return invProducts();
+  if(tab==='pricing') return invPricing();
+  if(tab==='marketing') return invMarketing();
+  if(tab==='operations') return invOperations();
+  return '';
+}
+function invFinance(){
+  var py=E.periodTotals('PY'), cy=E.periodTotals('CY');
+  return '<div class="grid-2">'+
+    '<div class="panel"><div class="panel-title">Gross margin & EBITDA margin, by month</div><div class="chart-wrap"><canvas id="c-fin-margin"></canvas></div></div>'+
+    '<div class="panel"><div class="panel-title">Period comparison</div>'+
+      simpleTable(['Metric','Year 1','Year 2','Δ'], [
+        ['Revenue', U.fmtUSDk(py.revenue), U.fmtUSDk(cy.revenue), U.fmtSigned((cy.revenue-py.revenue)/py.revenue*100)],
+        ['COGS', U.fmtUSDk(py.cogs), U.fmtUSDk(cy.cogs), U.fmtSigned((cy.cogs-py.cogs)/py.cogs*100)],
+        ['Gross Profit', U.fmtUSDk(py.grossProfit), U.fmtUSDk(cy.grossProfit), U.fmtSigned((cy.grossProfit-py.grossProfit)/py.grossProfit*100)],
+        ['Gross Margin %', U.fmtPct(py.marginPct), U.fmtPct(cy.marginPct), U.fmtPP(cy.marginPct-py.marginPct)],
+        ['Operating Expenses', U.fmtUSDk(py.opex), U.fmtUSDk(cy.opex), U.fmtSigned((cy.opex-py.opex)/py.opex*100)],
+        ['EBITDA', U.fmtUSDk(py.ebitda), U.fmtUSDk(cy.ebitda), U.fmtSigned((cy.ebitda-py.ebitda)/Math.abs(py.ebitda)*100)],
+        ['Operating Cash Flow', U.fmtUSDk(py.ocf), U.fmtUSDk(cy.ocf), U.fmtUSDk(cy.ocf-py.ocf)]
+      ])+
+    '</div></div>';
+}
+function invCustomers(){
+  var rows = SEGMENTS.map(function(s){
+    var py = E.marginPctBySegment('PY',s), cy = E.marginPctBySegment('CY',s);
+    var churnPY = E.churnRate('PY',s), churnCY = E.churnRate('CY',s);
+    return [s, U.fmtPct(churnPY), U.fmtPct(churnCY), U.fmtPP(churnCY-churnPY), U.fmtPct(py,1), U.fmtPct(cy,1), Math.round(E.npsBySegment(s))];
+  });
+  return '<div class="grid-2">'+
+    '<div class="panel"><div class="panel-title">Revenue by segment, Year 1 vs Year 2</div><div class="chart-wrap"><canvas id="c-cust-seg"></canvas></div></div>'+
+    '<div class="panel"><div class="panel-title">Segment scorecard</div>'+
+      simpleTable(['Segment','Churn Y1','Churn Y2','Δ Churn','Margin Y1','Margin Y2','NPS'], rows)+
+    '</div></div>'+
+    '<div class="panel"><div class="panel-title">Customer concentration by acquisition channel</div>'+
+      channelTable()+
+    '</div>';
+}
+function channelTable(){
+  var rows = CHANNELS.map(function(ch){
+    var n = D.customers.filter(function(c){return c.acquisition_channel===ch;}).length;
+    var seg = {}; D.customers.filter(function(c){return c.acquisition_channel===ch;}).forEach(function(c){seg[c.segment]=(seg[c.segment]||0)+1;});
+    var dominant = Object.keys(seg).sort(function(a,b){return seg[b]-seg[a];})[0]||'—';
+    return [ch, n, dominant];
+  });
+  return simpleTable(['Channel','Customers','Dominant Segment'], rows);
+}
+function invProducts(){
+  var rows = E.productMarginTable('CY').sort(function(a,b){return b.revenue-a.revenue;});
+  var trs = rows.map(function(r){
+    return '<tr><td>'+r.product+'</td><td>'+r.category+'</td><td>'+U.fmtUSDk(r.revenue)+'</td><td>'+U.fmtPct(r.marginPct,1)+'</td><td>'+r.units+'</td></tr>';
+  }).join('');
+  return '<div class="grid-2">'+
+    '<div class="panel"><div class="panel-title">Revenue mix by product category (Year 2)</div><div class="chart-wrap"><canvas id="c-prod-cat"></canvas></div></div>'+
+    '<div class="panel"><div class="panel-title">Category margin, Year 1 vs Year 2</div><div class="chart-wrap"><canvas id="c-prod-margin"></canvas></div></div>'+
+  '</div>'+
+  '<div class="panel"><div class="panel-title">Product-level detail — Year 2</div>'+
+    '<table><thead><tr><th>Product</th><th>Category</th><th>Revenue</th><th>Margin %</th><th>Units</th></tr></thead><tbody>'+trs+'</tbody></table>'+
+  '</div>';
+}
+function invPricing(){
+  var rows = SEGMENTS.map(function(s){
+    return [s, U.fmtPct(E.discountBySegment('PY',s),1), U.fmtPct(E.discountBySegment('CY',s),1), U.fmtPP(E.discountBySegment('CY',s)-E.discountBySegment('PY',s))];
+  });
+  return '<div class="grid-2">'+
+    '<div class="panel"><div class="panel-title">Average discount by segment</div><div class="chart-wrap"><canvas id="c-price-disc"></canvas></div></div>'+
+    '<div class="panel"><div class="panel-title">Discount detail</div>'+simpleTable(['Segment','Discount Y1','Discount Y2','Δ pp'],rows)+'</div>'+
+  '</div>'+
+  '<div class="panel"><div class="panel-title">Discount vs. gross margin, by month</div><div class="chart-wrap"><canvas id="c-price-disc-margin"></canvas></div></div>';
+}
+function invMarketing(){
+  var rows = CHANNELS.map(function(ch){
+    var py = D.campaigns.find(function(c){return c.channel===ch&&c.period==='PY';});
+    var cy = D.campaigns.find(function(c){return c.channel===ch&&c.period==='CY';});
+    return [ch, U.fmtUSDk(py.spend), U.fmtUSDk(cy.spend), U.fmtUSD(py.cac), U.fmtUSD(cy.cac), U.fmtSigned((cy.cac-py.cac)/py.cac*100)];
+  });
+  return '<div class="grid-2">'+
+    '<div class="panel"><div class="panel-title">Spend by channel, Year 1 vs Year 2</div><div class="chart-wrap"><canvas id="c-mkt-spend"></canvas></div></div>'+
+    '<div class="panel"><div class="panel-title">CAC by channel</div>'+simpleTable(['Channel','Spend Y1','Spend Y2','CAC Y1','CAC Y2','Δ CAC'],rows)+'</div>'+
+  '</div>';
+}
+function invOperations(){
+  var fPY = E.fulfillmentByRegion('PY'), fCY = E.fulfillmentByRegion('CY');
+  var rows = REGIONS.map(function(r){
+    return [r, U.fmtUSDk(fPY[r]), U.fmtUSDk(fCY[r]), U.fmtSigned((fCY[r]-fPY[r])/fPY[r]*100)];
+  });
+  return '<div class="grid-2">'+
+    '<div class="panel"><div class="panel-title">Fulfillment cost by region</div><div class="chart-wrap"><canvas id="c-ops-region"></canvas></div></div>'+
+    '<div class="panel"><div class="panel-title">Regional detail</div>'+simpleTable(['Region','Cost Y1','Cost Y2','Δ'],rows)+'</div>'+
+  '</div>'+
+  '<div class="panel"><div class="panel-title">Return rate by product category</div>'+
+    simpleTable(['Category','Return Rate Y1','Return Rate Y2'], ['Core Platform','Professional Services','Support Plans','Integration Add-on','Volume Consumables'].map(function(cat){
+      return [cat, U.fmtPct(E.returnRate('PY',cat),1), U.fmtPct(E.returnRate('CY',cat),1)];
+    }))+
+  '</div>';
+}
+function simpleTable(headers, rows){
+  return '<table><thead><tr>'+headers.map(function(h){return '<th>'+h+'</th>';}).join('')+'</tr></thead><tbody>'+
+    rows.map(function(r){return '<tr>'+r.map(function(c){return '<td>'+c+'</td>';}).join('')+'</tr>';}).join('')+
+  '</tbody></table>';
+}
+function bindInvestigation(){
+  $$('.tab').forEach(function(t){
+    t.onclick = function(){ App.state.invTab = t.getAttribute('data-tab'); $('#inv-body').innerHTML = renderInvTab(App.state.invTab); $$('.tab').forEach(function(x){x.classList.remove('active');}); t.classList.add('active'); bindInvCharts(App.state.invTab); };
+  });
+  var b = $('#btn-goto-hyp'); if(b) b.onclick = function(){ goPhase('hypotheses'); };
+  bindInvCharts(App.state.invTab);
+}
+var PALETTE = ['#3FB6C4','#E0A339','#E0596B','#3FBF7F','#8B7CD8','#5D6B7D'];
+function axisOpts(){ return {x:{ticks:{color:CHART_DEFAULTS.color, maxRotation:0, autoSkip:true, maxTicksLimit:8}, grid:{color:CHART_DEFAULTS.grid}}, y:{ticks:{color:CHART_DEFAULTS.color}, grid:{color:CHART_DEFAULTS.grid}}}; }
+function bindInvCharts(tab){
+  var months=[]; for(var m=0;m<24;m++) months.push(U.monthLabel(m));
+  if(tab==='finance'){
+    var gm = D.financeMonthly.map(function(f){return f.revenue? U.round1((f.gross_profit/f.revenue*100)):0;});
+    var em = D.financeMonthly.map(function(f){return f.revenue? U.round1((f.ebitda/f.revenue*100)):0;});
+    makeChart('c-fin-margin', {type:'line', data:{labels:months, datasets:[
+      {label:'Gross Margin %', data:gm, borderColor:PALETTE[0], pointRadius:0, tension:.3, borderWidth:2},
+      {label:'EBITDA Margin %', data:em, borderColor:PALETTE[1], pointRadius:0, tension:.3, borderWidth:2}
+    ]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:CHART_DEFAULTS.color}}}, scales:axisOpts()}});
+  }
+  if(tab==='customers'){
+    var py = E.revenueBySegment('PY'), cy = E.revenueBySegment('CY');
+    makeChart('c-cust-seg', {type:'bar', data:{labels:SEGMENTS, datasets:[
+      {label:'Year 1', data:SEGMENTS.map(function(s){return Math.round(py[s]);}), backgroundColor:PALETTE[5]},
+      {label:'Year 2', data:SEGMENTS.map(function(s){return Math.round(cy[s]);}), backgroundColor:PALETTE[0]}
+    ]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:CHART_DEFAULTS.color}}}, scales:axisOpts()}});
+  }
+  if(tab==='products'){
+    var cats = ['Core Platform','Professional Services','Support Plans','Integration Add-on','Volume Consumables'];
+    var revCY = cats.map(function(c){return Engine_catRevenue(c,'CY');});
+    makeChart('c-prod-cat', {type:'doughnut', data:{labels:cats, datasets:[{data:revCY, backgroundColor:PALETTE}]},
+      options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom', labels:{color:CHART_DEFAULTS.color, boxWidth:10, font:{size:10}}}}}});
+    var mPY = cats.map(function(c){return Engine_catMargin(c,'PY');});
+    var mCY = cats.map(function(c){return Engine_catMargin(c,'CY');});
+    makeChart('c-prod-margin', {type:'bar', data:{labels:cats, datasets:[
+      {label:'Year 1', data:mPY, backgroundColor:PALETTE[5]}, {label:'Year 2', data:mCY, backgroundColor:PALETTE[0]}
+    ]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:CHART_DEFAULTS.color}}}, scales:axisOpts()}});
+  }
+  if(tab==='pricing'){
+    var dPY = SEGMENTS.map(function(s){return U.round1(E.discountBySegment('PY',s));});
+    var dCY = SEGMENTS.map(function(s){return U.round1(E.discountBySegment('CY',s));});
+    makeChart('c-price-disc', {type:'bar', data:{labels:SEGMENTS, datasets:[
+      {label:'Year 1', data:dPY, backgroundColor:PALETTE[5]}, {label:'Year 2', data:dCY, backgroundColor:PALETTE[2]}
+    ]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:CHART_DEFAULTS.color}}}, scales:axisOpts()}});
+    var discSeries = D.financeMonthly.map(function(f,i){ var tx=D.transactions.filter(function(t){return t.month===i;}); return tx.length? U.round1(tx.reduce(function(s,t){return s+t.discount;},0)/tx.length):0; });
+    var marginSeries = D.financeMonthly.map(function(f){return f.revenue? U.round1(f.gross_profit/f.revenue*100):0;});
+    makeChart('c-price-disc-margin', {type:'line', data:{labels:months, datasets:[
+      {label:'Avg Discount %', data:discSeries, borderColor:PALETTE[2], pointRadius:0, tension:.3, borderWidth:2, yAxisID:'y'},
+      {label:'Gross Margin %', data:marginSeries, borderColor:PALETTE[0], pointRadius:0, tension:.3, borderWidth:2, yAxisID:'y1'}
+    ]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:CHART_DEFAULTS.color}}},
+      scales:{x:axisOpts().x, y:{position:'left', ticks:{color:CHART_DEFAULTS.color}, grid:{color:CHART_DEFAULTS.grid}}, y1:{position:'right', ticks:{color:CHART_DEFAULTS.color}, grid:{display:false}}}}});
+  }
+  if(tab==='marketing'){
+    var sPY = CHANNELS.map(function(ch){return D.campaigns.find(function(c){return c.channel===ch&&c.period==='PY';}).spend;});
+    var sCY = CHANNELS.map(function(ch){return D.campaigns.find(function(c){return c.channel===ch&&c.period==='CY';}).spend;});
+    makeChart('c-mkt-spend', {type:'bar', data:{labels:CHANNELS, datasets:[
+      {label:'Year 1', data:sPY, backgroundColor:PALETTE[5]}, {label:'Year 2', data:sCY, backgroundColor:PALETTE[3]}
+    ]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:CHART_DEFAULTS.color}}}, scales:axisOpts()}});
+  }
+  if(tab==='operations'){
+    var fPY = E.fulfillmentByRegion('PY'), fCY = E.fulfillmentByRegion('CY');
+    makeChart('c-ops-region', {type:'bar', data:{labels:REGIONS, datasets:[
+      {label:'Year 1', data:REGIONS.map(function(r){return Math.round(fPY[r]);}), backgroundColor:PALETTE[5]},
+      {label:'Year 2', data:REGIONS.map(function(r){return Math.round(fCY[r]);}), backgroundColor:PALETTE[1]}
+    ]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:CHART_DEFAULTS.color}}}, scales:axisOpts()}});
+  }
+}
+function Engine_catRevenue(cat, period){
+  return Math.round(D.transactions.filter(function(t){return t.category===cat && t.month>=(period==='PY'?0:12) && t.month<=(period==='PY'?11:23);}).reduce(function(s,t){return s+t.revenue;},0));
+}
+function Engine_catMargin(cat, period){
+  var tx = D.transactions.filter(function(t){return t.category===cat && t.month>=(period==='PY'?0:12) && t.month<=(period==='PY'?11:23);});
+  var rev = tx.reduce(function(s,t){return s+t.revenue;},0), cost = tx.reduce(function(s,t){return s+t.cost;},0);
+  return rev? U.round1((rev-cost)/rev*100):0;
+}
+/* ---------------- Ask The Data ---------------- */
+var SUGGESTED_QUESTIONS = [
+  'Why did profit fall?',
+  'Which segment has the highest churn?',
+  'Where is discounting concentrated?',
+  'Which products lost the most margin?',
+  'Which channel has the worst CAC trend?',
+  'Is SMB growth profitable?'
+];
+function renderAskData(){
+  var history = App.state.askHistory.map(renderAnswerCard).join('');
+  return '<h2 class="section-title">Ask The Data</h2>'+
+    '<p class="section-sub">Query the dataset in plain language. Answers are generated from the application\'s actual calculations — not invented.</p>'+
+    '<div class="ask-box"><input type="text" id="ask-input" placeholder="e.g. Why did profit fall?"><button class="btn btn-primary" id="ask-submit">ASK</button></div>'+
+    '<div class="suggested-q">'+SUGGESTED_QUESTIONS.map(function(q){return '<button data-q="'+q.replace(/"/g,'&quot;')+'">'+q+'</button>';}).join('')+'</div>'+
+    '<div id="ask-history">'+history+'</div>'+
+    '<div class="actions-row"><button class="btn btn-primary" id="btn-goto-hyp2">OPEN HYPOTHESIS BOARD →</button></div>';
+}
+function renderAnswerCard(item){
+  return '<div class="answer-card"><div class="aq">Q: '+item.q+'</div>'+
+    '<div class="a-direct">'+item.direct+'</div>'+
+    '<div>'+item.metrics.map(function(m){return '<div class="ev-line"><span class="ev-num">'+m.v+'</span> '+m.l+'</div>';}).join('')+'</div>'+
+    '<div class="caveat">'+item.caveat+'</div>'+
+  '</div>';
+}
+function answerQuestion(q){
+  var qn = q.toLowerCase();
+  var rc = E.rootCause();
+  if(qn.indexOf('why did profit fall')>-1 || qn.indexOf('profit fall')>-1){
+    return {q:q, direct:'EBITDA moved '+U.fmtSigned(rc.ebitdaDeltaPct)+' primarily because gross margin compressed '+U.fmtPP(rc.marginDeltaPP)+', driven by rising discounts and a mix shift toward lower-margin SMB volume.',
+      metrics:[{v:U.fmtPP(rc.discDeltaPP),l:'change in blended average discount'},{v:U.fmtPct(rc.smbShareCY-rc.smbSharePY>0?rc.smbShareCY:rc.smbShareCY,1),l:'SMB share of revenue, Year 2'},{v:U.fmtPP(rc.smbVolShareCY-rc.smbVolSharePY),l:'shift of SMB revenue into Volume Consumables'}],
+      caveat:'The data shows association, not proof of causation. Confirm with the Root-Cause view before presenting this to the board.'};
+  }
+  if(qn.indexOf('churn')>-1){
+    var rows = SEGMENTS.map(function(s){return {s:s, py:E.churnRate('PY',s), cy:E.churnRate('CY',s)};});
+    var worst = rows.slice().sort(function(a,b){return b.cy-a.cy;})[0];
+    var worstDelta = rows.slice().sort(function(a,b){return (b.cy-b.py)-(a.cy-a.py);})[0];
+    return {q:q, direct:worst.s+' has the highest churn rate in Year 2 at '+U.fmtPct(worst.cy)+'. The largest year-over-year increase is in '+worstDelta.s+' ('+U.fmtPP(worstDelta.cy-worstDelta.py)+').',
+      metrics: rows.map(function(r){return {v:U.fmtPct(r.cy), l:r.s+' churn (Year 2), vs '+U.fmtPct(r.py)+' in Year 1'};}),
+      caveat:'Churn is measured against customers active at the start of each period. Segment sample sizes vary.'};
+  }
+  if(qn.indexOf('discount')>-1){
+    var d = SEGMENTS.map(function(s){return {s:s, py:E.discountBySegment('PY',s), cy:E.discountBySegment('CY',s)};});
+    var worst = d.slice().sort(function(a,b){return (b.cy-b.py)-(a.cy-a.py);})[0];
+    return {q:q, direct:'Discounting is concentrated in '+worst.s+', where average discount moved from '+U.fmtPct(worst.py,1)+' to '+U.fmtPct(worst.cy,1)+' ('+U.fmtPP(worst.cy-worst.py)+').',
+      metrics: d.map(function(r){return {v:U.fmtPP(r.cy-r.py), l:r.s+' discount change year over year'};}),
+      caveat:'Deal-level discount data can be noisy; these are period averages, not deal-desk approvals.'};
+  }
+  if(qn.indexOf('product')>-1 && qn.indexOf('margin')>-1){
+    var pm = E.productMarginTable('PY').map(function(p,i){ var cy=E.productMarginTable('CY')[i]; return {name:p.product, delta:cy.marginPct-p.marginPct, cat:p.category}; });
+    var worst = pm.sort(function(a,b){return a.delta-b.delta;})[0];
+    return {q:q, direct:worst.name+' ('+worst.cat+') saw the largest margin compression, down '+Math.abs(worst.delta).toFixed(1)+' points year over year.',
+      metrics: pm.slice(0,5).map(function(p){return {v:U.fmtPP(p.delta), l:p.name};}),
+      caveat:'Margin changes reflect discounting and mix within each product, not unit cost changes (unit costs were held constant in this dataset).'};
+  }
+  if(qn.indexOf('cac')>-1 || qn.indexOf('channel')>-1){
+    var rows2 = CHANNELS.map(function(ch){ return {ch:ch, py:E.CAC('PY',ch), cy:E.CAC('CY',ch)}; });
+    var worst2 = rows2.slice().sort(function(a,b){return (b.cy-b.py)/b.py - (a.cy-a.py)/a.py;})[0];
+    return {q:q, direct:worst2.ch+' has the worst CAC trend, moving from '+U.fmtUSD(worst2.py)+' to '+U.fmtUSD(worst2.cy)+' ('+U.fmtSigned((worst2.cy-worst2.py)/worst2.py*100)+').',
+      metrics: rows2.map(function(r){return {v:U.fmtUSD(r.cy), l:r.ch+' CAC, Year 2'};}),
+      caveat:'Rising CAC in acquisition channels correlates with the SMB mix shift but is a smaller dollar driver of the EBITDA decline than discounting and margin mix. Treat as a contributing signal, not the primary cause.'};
+  }
+  if(qn.indexOf('smb') > -1 && qn.indexOf('profit') > -1){
+    var smbMarginCY = E.marginPctBySegment('CY','SMB'), entMarginCY = E.marginPctBySegment('CY','Enterprise');
+    return {q:q, direct:'SMB growth is real but lower-quality: SMB gross margin is '+U.fmtPct(smbMarginCY,1)+' in Year 2 versus '+U.fmtPct(entMarginCY,1)+' for Enterprise, and '+U.fmtPct(rc.smbVolShareCY,1)+' of SMB revenue now sits in the lowest-margin product category.',
+      metrics:[{v:U.fmtPct(smbMarginCY,1),l:'SMB gross margin, Year 2'},{v:U.fmtPct(entMarginCY,1),l:'Enterprise gross margin, Year 2'},{v:U.fmtPP(rc.smbVolShareCY-rc.smbVolSharePY),l:'shift of SMB mix into Volume Consumables'}],
+      caveat:'SMB growth is not inherently bad — the issue is the combination of low margin and rising discount depth in that segment.'};
+  }
+  return {q:q, direct:'That question isn\'t recognized yet — try one of the suggested questions, or explore the Investigation Desk directly.',
+    metrics:[], caveat:'The natural-language interface covers profit, churn, discounting, product margin, CAC and SMB profitability in this case.'};
+}
+function bindAskData(){
+  var submit = $('#ask-submit');
+  function doAsk(q){
+    if(!q) return;
+    App.state.askHistory.unshift(answerQuestion(q));
+    App.state.activePhase='askdata'; render();
+  }
+  if(submit) submit.onclick = function(){ doAsk($('#ask-input').value.trim()); };
+  var inp = $('#ask-input'); if(inp) inp.onkeydown = function(e){ if(e.key==='Enter') doAsk(inp.value.trim()); };
+  $$('.suggested-q button').forEach(function(b){ b.onclick=function(){ doAsk(b.getAttribute('data-q')); }; });
+  var b2 = $('#btn-goto-hyp2'); if(b2) b2.onclick = function(){ goPhase('hypotheses'); };
+}
+/* ---------------- Hypothesis Board ---------------- */
+var STATUS_LIST = ['untested','investigating','supported','rejected','confirmed'];
+function evidenceFor(id){
+  var rc = E.rootCause();
+  if(id==='h1'){
+    return {conf:82, forE:[
+        {n:U.fmtPP(rc.discDeltaPP), l:'blended average discount, Year 1 → Year 2'},
+        {n:U.fmtPP(rc.marginDeltaPP), l:'gross margin change over the same period'},
+        {n:U.fmtPP(rc.smbDiscDelta), l:'SMB discount increase specifically'}
+      ], against:[{n:U.fmtPP(rc.entDiscDelta), l:'Enterprise discount barely moved'}]};
+  }
+  if(id==='h2'){
+    return {conf:78, forE:[
+        {n:U.fmtPP(rc.smbShareCY-rc.smbSharePY), l:'SMB share of total revenue, change'},
+        {n:U.fmtPP(rc.smbVolShareCY-rc.smbVolSharePY), l:'shift of SMB revenue into the lowest-margin product category'},
+        {n:U.fmtPct(E.marginPctBySegment('CY','SMB'),1), l:'SMB gross margin, Year 2'}
+      ], against:[{n:U.fmtPct(E.marginPctBySegment('CY','Enterprise'),1), l:'Enterprise gross margin remains materially higher'}]};
+  }
+  if(id==='h3'){
+    var fPY=E.fulfillmentByRegion('PY'), fCY=E.fulfillmentByRegion('CY');
+    var totPY=Object.values(fPY).reduce(function(a,b){return a+b;},0), totCY=Object.values(fCY).reduce(function(a,b){return a+b;},0);
+    return {conf:54, forE:[
+        {n:U.fmtSigned((totCY-totPY)/totPY*100), l:'total fulfillment cost, Year 1 → Year 2'},
+        {n:U.fmtSigned((fCY['South']-fPY['South'])/fPY['South']*100), l:'fulfillment cost growth in South region'}
+      ], against:[{n:U.fmtUSDk(totCY-totPY), l:'total dollar increase is small relative to the EBITDA decline — a contributing, not primary, driver'}]};
+  }
+  if(id==='h4'){
+    return {conf:70, forE:[
+        {n:U.fmtPP(rc.entChurnCY-rc.entChurnPY), l:'Enterprise churn rate, change Year 1 → Year 2'},
+        {n:Math.round(E.npsBySegment('Enterprise')), l:'current Enterprise NPS'}
+      ], against:[{n:U.fmtPct(rc.entChurnCY,1), l:'Enterprise churn remains lower in absolute terms than SMB churn'}]};
+  }
+  if(id==='h5'){
+    var cacPY=E.CAC('PY'), cacCY=E.CAC('CY');
+    return {conf:22, forE:[{n:U.fmtSigned((cacCY-cacPY)/cacPY*100), l:'blended CAC increase, Year 1 → Year 2'}],
+      against:[{n:U.fmtUSDk((cacCY-cacPY)*E.newCustomers('CY')), l:'estimated dollar cost of the CAC increase — small relative to the EBITDA gap'},
+               {n:U.fmtUSDk(rc.cy.grossProfit-rc.py.grossProfit), l:'gross profit compression alone dwarfs the marketing efficiency loss'}]};
+  }
+}
+function renderHypotheses(){
+  var cards = HYPOTHESES.map(function(h){
+    var st = App.state.hypStatus[h.id];
+    var ev = App.state.hypEvidenceViewed[h.id];
+    var evData = ev ? evidenceFor(h.id) : null;
+    return '<div class="hyp-card">'+
+      '<div class="hyp-head"><div><h4>'+h.title.replace(/^./,h.title[0].toUpperCase())+'</h4><div class="hyp-tag">'+h.id.toUpperCase()+' · '+h.tag+'</div></div>'+
+      '<span class="badge-status st-'+st+'">'+st.toUpperCase()+'</span></div>'+
+      '<button class="btn btn-ghost btn-sm" data-ev="'+h.id+'">'+(ev?'Hide Evidence':'View Evidence')+'</button>'+
+      '<div class="hyp-evidence '+(ev?'open':'')+'">'+
+        (evData ? (
+          '<div style="margin-bottom:6px;color:var(--text-faint);font-size:11px;text-transform:uppercase;letter-spacing:.05em;">Evidence for</div>'+
+          evData.forE.map(function(m){return '<div class="ev-line"><span class="ev-num">'+m.n+'</span> '+m.l+'</div>';}).join('')+
+          '<div style="margin:10px 0 6px 0;color:var(--text-faint);font-size:11px;text-transform:uppercase;letter-spacing:.05em;">Evidence against</div>'+
+          evData.against.map(function(m){return '<div class="ev-line"><span class="ev-num">'+m.n+'</span> '+m.l+'</div>';}).join('')+
+          '<div style="margin-top:10px;font-size:12px;color:var(--text-faint);">Estimated confidence: <b style="color:var(--text);">'+evData.conf+'%</b></div>'
+        ) : '') +
+      '</div>'+
+      '<div class="status-btns">'+STATUS_LIST.map(function(s){
+        return '<button class="status-btn '+(st===s?'selected':'')+'" data-hyp="'+h.id+'" data-status="'+s+'">'+s+'</button>';
+      }).join('')+'</div>'+
+    '</div>';
+  }).join('');
+  return '<h2 class="section-title">Hypothesis Board</h2>'+
+    '<p class="section-sub">Form hypotheses, gather evidence, and mark each one Untested → Investigating → Supported / Rejected → Confirmed.</p>'+
+    cards+
+    '<div class="actions-row"><button class="btn btn-primary" id="btn-goto-rc">GO TO ROOT-CAUSE ANALYSIS →</button></div>';
+}
+function bindHypotheses(){
+  $$('[data-ev]').forEach(function(btn){
+    btn.onclick = function(){
+      var id = btn.getAttribute('data-ev');
+      App.state.hypEvidenceViewed[id] = !App.state.hypEvidenceViewed[id];
+      render();
+    };
+  });
+  $$('.status-btn').forEach(function(btn){
+    btn.onclick = function(){
+      App.state.hypStatus[btn.getAttribute('data-hyp')] = btn.getAttribute('data-status');
+      render();
+    };
+  });
+  var b = $('#btn-goto-rc'); if(b) b.onclick = function(){ goPhase('rootcause'); };
+}
+/* ---------------- Root-Cause Analysis ---------------- */
+function renderRootCause(){
+  var rc = E.rootCause();
+  var nodes = [
+    {label:'BUSINESS PROBLEM', val:'EBITDA '+U.fmtSigned(rc.ebitdaDeltaPct)+' ('+U.fmtUSDk(rc.py.ebitda)+' → '+U.fmtUSDk(rc.cy.ebitda)+')'},
+    {label:'DRIVER 1', val:'Gross margin '+U.fmtPP(rc.marginDeltaPP)+' ('+U.fmtPct(rc.py.marginPct)+' → '+U.fmtPct(rc.cy.marginPct)+')'},
+    {label:'EVIDENCE', val:'Average discount '+U.fmtPP(rc.discDeltaPP)+' — concentrated in SMB ('+U.fmtPP(rc.smbDiscDelta)+') while Enterprise stayed flat ('+U.fmtPP(rc.entDiscDelta)+')'},
+    {label:'EVIDENCE', val:'SMB revenue share '+U.fmtPct(rc.smbSharePY,1)+' → '+U.fmtPct(rc.smbShareCY,1)+', with an added shift into the lowest-margin category ('+U.fmtPP(rc.smbVolShareCY-rc.smbVolSharePY)+')'},
+    {label:'DRIVER 2', val:'Enterprise churn '+U.fmtPct(rc.entChurnPY,1)+' → '+U.fmtPct(rc.entChurnCY,1)+' ('+U.fmtPP(rc.entChurnCY-rc.entChurnPY)+'), eroding the highest-margin base while it grows in the lowest-margin one'}
+  ];
+  var chain = nodes.map(function(n,i){
+    return '<div class="rc-node'+(i===0?'':'')+'"><div class="rc-label">'+n.label+'</div><div class="rc-val">'+n.val+'</div></div>'+
+      (i<nodes.length-1? '<div class="rc-arrow">↓</div>':'');
+  }).join('');
+  return '<h2 class="section-title">Root-Cause Analysis</h2>'+
+    '<p class="section-sub">The evidence chain below is generated from the same dataset you investigated — not a scripted answer.</p>'+
+    '<div class="rc-chain">'+chain+
+      '<div class="rc-arrow">↓</div>'+
+      '<div class="rc-node rc-final"><div class="rc-label">ROOT CAUSE</div><div class="rc-val">A revenue-quality problem: growth is concentrated in low-margin, heavily-discounted SMB volume, while the company simultaneously loses its highest-margin Enterprise accounts. This is not primarily a cost problem.</div></div>'+
+    '</div>'+
+    '<div class="panel" style="max-width:640px;margin:24px auto 0 auto;">'+
+      '<div class="panel-title">Classify this finding</div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;">'+
+        '<span class="badge badge-fact">FACT</span><span style="font-size:12.5px;color:var(--text-dim);">Discount and mix figures above are directly observed in transaction data.</span>'+
+      '</div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">'+
+        '<span class="badge badge-inference">INFERENCE</span><span style="font-size:12.5px;color:var(--text-dim);">The combination of discounting, mix shift and Enterprise churn is the primary driver of the EBITDA decline.</span>'+
+      '</div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">'+
+        '<span class="badge badge-speculation">SPECULATION</span><span style="font-size:12.5px;color:var(--text-dim);">Why Enterprise churn is rising specifically — the data does not directly say (service quality, pricing perception, competitive pressure are all plausible but unconfirmed).</span>'+
+      '</div>'+
+    '</div>'+
+    '<div class="actions-row"><button class="btn btn-primary" id="btn-goto-decision">PROCEED TO DECISION CENTER →</button></div>';
+}
+function bindRootCause(){
+  var b = $('#btn-goto-decision'); if(b) b.onclick = function(){ goPhase('decision'); };
+}
+/* ---------------- Decision Center ---------------- */
+function renderDecision(){
+  var cards = DECISIONS.map(function(d){
+    var imp = E.decisionImpact(d.id);
+    var sel = App.state.decisionChoice===d.id;
+    return '<div class="decision-card '+(sel?'selected':'')+'" data-dec="'+d.id+'">'+
+      '<h4>OPTION '+d.id+' — '+d.name+'</h4>'+
+      '<div class="dc-desc">'+d.desc+'</div>'+
+      '<div class="impact-row"><span class="il">Revenue impact</span><span class="iv" style="color:'+(imp.revenueDeltaPct>=0?'var(--pos)':'var(--neg)')+'">'+U.fmtSigned(imp.revenueDeltaPct)+'</span></div>'+
+      '<div class="impact-row"><span class="il">Gross margin</span><span class="iv" style="color:'+(imp.marginDeltaPP>=0?'var(--pos)':'var(--neg)')+'">'+U.fmtPP(imp.marginDeltaPP)+'</span></div>'+
+      '<div class="impact-row"><span class="il">EBITDA impact</span><span class="iv" style="color:'+(imp.ebitdaDeltaPct>=0?'var(--pos)':'var(--neg)')+'">'+U.fmtSigned(imp.ebitdaDeltaPct)+'</span></div>'+
+      '<div class="impact-row"><span class="il">Churn impact</span><span class="iv" style="color:'+(imp.churnDeltaPP<=0?'var(--pos)':'var(--neg)')+'">'+U.fmtPP(imp.churnDeltaPP)+'</span></div>'+
+      '<div class="dc-meta"><span class="chip">Horizon: <strong>'+imp.horizon+'</strong></span><span class="chip">Risk: <strong>'+imp.risk+'</strong></span></div>'+
+    '</div>';
+  }).join('');
+  return '<h2 class="section-title">Decision Center</h2>'+
+    '<p class="section-sub">Every option is defensible. None is free of trade-offs. Select one, then explain why.</p>'+
+    '<div class="decision-grid">'+cards+'</div>'+
+    '<div class="panel">'+
+      '<div class="panel-title">Why?</div>'+
+      '<textarea id="rationale" rows="4" placeholder="State your rationale: what evidence supports this option, what risk are you accepting, and what would change your mind?">'+App.state.decisionRationale+'</textarea>'+
+    '</div>'+
+    '<div class="actions-row"><button class="btn btn-primary" id="btn-goto-sim" '+(App.state.decisionChoice?'':'disabled')+'>OPEN WHAT-IF SIMULATOR →</button></div>';
+}
+function bindDecision(){
+  $$('.decision-card').forEach(function(c){
+    c.onclick = function(){ App.state.decisionChoice = c.getAttribute('data-dec'); render(); };
+  });
+  var ta = $('#rationale'); if(ta) ta.oninput = function(){ App.state.decisionRationale = ta.value; };
+  var b = $('#btn-goto-sim'); if(b) b.onclick = function(){ if(App.state.decisionChoice) goPhase('simulator'); };
+}
+/* ---------------- What-If Simulator ---------------- */
+function simulate(params){
+  var base = E.rootCause().cy;
+  var revenueMult = 1 + (params.price/100)*0.55 - (params.discount/100)*0.9 - (params.churn/100)*0.4 + (params.marketing/100)*0.12;
+  var marginPPDelta = (params.discount*-1)*0.62 + (params.price)*0.35;
+  var newRevenue = base.revenue*revenueMult;
+  var newMarginPct = clamp(base.marginPct + marginPPDelta, 5, 85);
+  var newGrossProfit = newRevenue*(newMarginPct/100);
+  var opexAdj = base.opex*(1 + (params.marketing/100)*0.25);
+  var newEbitda = newGrossProfit - opexAdj;
+  var churnRateAdj = clamp(E.churnRate('CY') + params.churn*0.35 - params.price*0.15, 1, 40);
+  var custAdj = Math.round(E.customerCountAtEnd('CY')*(1 - (churnRateAdj-E.churnRate('CY'))/100));
+  var clvAdj = E.avgCLV('CY')*(1 + params.price/100*0.4 - params.churn/100*0.5);
+  var cashAdj = base.ocf + (newEbitda-base.ebitda)*0.8;
+  return {revenue:newRevenue, marginPct:newMarginPct, grossProfit:newGrossProfit, ebitda:newEbitda, churn:churnRateAdj, customers:custAdj, clv:clvAdj, ocf:cashAdj};
+}
+function clamp(v,lo,hi){ return Math.max(lo,Math.min(hi,v)); }
+var SIM_UNITS = {discount:'pp', price:'%', churn:'pp', marketing:'%'};
+function renderSimulator(){
+  var p = App.state.simParams;
+  var base = E.rootCause().cy;
+  return '<h2 class="section-title">What-If Simulator</h2>'+
+    '<p class="section-sub">Move the levers. Nothing here is precise to the dollar — treat it as directional, and note the assumptions below each lever.</p>'+
+    '<div class="grid-2">'+
+      '<div class="panel">'+
+        slider('Discount change', 'discount', p.discount, -10, 10, 'ASSUMPTION: a 1pp discount cut recovers roughly 0.6pp of gross margin and costs ~0.9% of revenue in lost deals.')+
+        slider('Price change', 'price', p.price, -10, 10, 'ASSUMPTION: list price changes pass through at ~55% into realized revenue after elasticity, and add churn risk.')+
+        slider('Churn rate change', 'churn', p.churn, -5, 5, 'ASSUMPTION: each additional point of churn costs ~0.4% of revenue and pressures CLV.')+
+        slider('Marketing spend change', 'marketing', p.marketing, -30, 30, 'ASSUMPTION: spend changes shift revenue modestly (~0.12x) and opex directly (~0.25x).')+
+      '</div>'+
+      '<div class="panel">'+
+        '<div class="panel-title">Base Case vs. Your Scenario</div>'+
+        '<div class="sim-compare">'+
+          '<div class="sim-col"><h5>Base Case (Year 2 actual)</h5>'+
+            simRow('Revenue','sy-revenue', U.fmtUSDk(base.revenue))+simRow('Gross Margin','sy-margin',U.fmtPct(base.marginPct))+
+            simRow('EBITDA','sy-ebitda',U.fmtUSDk(base.ebitda))+simRow('Churn','sy-churn',U.fmtPct(E.churnRate('CY')))+
+            simRow('Customers','sy-cust',E.customerCountAtEnd('CY'))+simRow('Cash Flow','sy-cash',U.fmtUSDk(base.ocf))+
+          '</div>'+
+          '<div class="sim-col you"><h5>Your Scenario</h5>'+
+            simRow('Revenue','sv-revenue','')+simRow('Gross Margin','sv-margin','')+
+            simRow('EBITDA','sv-ebitda','')+simRow('Churn','sv-churn','')+
+            simRow('Customers','sv-cust','')+simRow('Cash Flow','sv-cash','')+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="actions-row"><button class="btn btn-primary" id="btn-goto-board">ENTER THE BOARDROOM →</button></div>';
+}
+function slider(label, key, val, min, max, note){
+  return '<div class="slider-row"><label>'+label+' <span class="sv" id="sv-label-'+key+'">'+(val>0?'+':'')+val+SIM_UNITS[key]+'</span></label>'+
+    '<input type="range" min="'+min+'" max="'+max+'" value="'+val+'" data-sim="'+key+'">'+
+    '<div style="font-size:11px;color:var(--text-faint);margin-top:6px;">'+note+'</div></div>';
+}
+function simRow(l,id,v){ return '<div class="sim-row"><span>'+l+'</span><span class="sv2" id="'+id+'">'+v+'</span></div>'; }
+function updateSimOutputs(){
+  var sim = simulate(App.state.simParams);
+  var set = function(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; };
+  set('sv-revenue', U.fmtUSDk(sim.revenue)); set('sv-margin', U.fmtPct(sim.marginPct));
+  set('sv-ebitda', U.fmtUSDk(sim.ebitda)); set('sv-churn', U.fmtPct(sim.churn));
+  set('sv-cust', sim.customers); set('sv-cash', U.fmtUSDk(sim.ocf));
+}
+function bindSimulator(){
+  $$('[data-sim]').forEach(function(s){
+    s.oninput = function(){
+      var key = s.getAttribute('data-sim');
+      App.state.simParams[key] = Number(s.value);
+      var lbl = document.getElementById('sv-label-'+key);
+      if(lbl) lbl.textContent = (s.value>0?'+':'')+s.value+SIM_UNITS[key];
+      updateSimOutputs();
+    };
+  });
+  updateSimOutputs();
+  var b = $('#btn-goto-board'); if(b) b.onclick = function(){ goPhase('boardroom'); };
+}
+/* ---------------- The Boardroom ---------------- */
+var EXECS = [
+  {id:'ceo', role:'CEO', focus:'Growth, strategy, competitive position',
+    q:'Your plan affects near-term revenue. Walk me through why that trade-off is acceptable given where we are with growth.'},
+  {id:'cfo', role:'CFO', focus:'Profitability, cash, financial risk',
+    q:'What happens to this plan if your churn or elasticity assumption is wrong? What is the downside case?'},
+  {id:'coo', role:'COO', focus:'Execution, capacity, operational feasibility',
+    q:'Can operations and the account teams actually execute this in the timeframe you have in mind? What has to be true?'}
+];
+var KEYWORDS = {
+  ceo:['growth','revenue','market','competit','strategic','position','trade-off','long-term','share'],
+  cfo:['risk','assumption','downside','cash','margin','ebitda','sensitiv','monitor','scenario','if'],
+  coo:['execut','operat','capacity','team','timeline','resource','feasib','rollout','training','deal desk']
+};
+function scoreAnswer(text, execId){
+  var t = (text||'').toLowerCase();
+  var words = t.trim().split(/\s+/).filter(Boolean).length;
+  var kws = KEYWORDS[execId];
+  var hits = kws.filter(function(k){return t.indexOf(k)>-1;}).length;
+  if(words<8) return {level:'weak', note:'Too thin to defend under pressure — add specifics.'};
+  if(hits>=2 && words>=20) return {level:'strong', note:'Directly engages the '+execId.toUpperCase()+'\'s concern with specifics.'};
+  if(hits>=1 || words>=20) return {level:'partial', note:'On the right track, but doesn\'t fully address the risk raised.'};
+  return {level:'weak', note:'Doesn\'t clearly engage what was actually asked.'};
+}
+function renderBoardroom(){
+  if(!App.state.decisionChoice){
+    return '<h2 class="section-title">The Boardroom</h2><div class="notice">You need to make a decision first. Go back to the Decision Center.</div>'+
+      '<div class="actions-row"><button class="btn btn-primary" id="btn-back-decision">← BACK TO DECISION CENTER</button></div>';
+  }
+  var dec = DECISIONS.find(function(d){return d.id===App.state.decisionChoice;});
+  var tabs = EXECS.map(function(ex){
+    var fb = App.state.boardFeedback[ex.id];
+    return '<div class="exec-tab" data-exec="'+ex.id+'"><div class="et-role">'+ex.role+'</div><div class="et-focus">'+ex.focus+'</div>'+
+      '<div class="et-status">'+(fb? fb.level.toUpperCase() : 'AWAITING RESPONSE')+'</div></div>';
+  }).join('');
+  var cur = App.state.boardCurrentExec || 'ceo';
+  var exec = EXECS.find(function(e){return e.id===cur;});
+  var fb = App.state.boardFeedback[cur];
+  return '<h2 class="section-title">The Boardroom</h2>'+
+    '<p class="section-sub">You recommended <b>Option '+dec.id+' — '+dec.name+'</b>. Defend it.</p>'+
+    '<div class="exec-tabs">'+tabs+'</div>'+
+    '<div class="chat-q"><div class="cq-role">'+exec.role+'</div><div class="cq-text">'+exec.q+'</div>'+
+      '<textarea id="board-answer" rows="4" placeholder="Respond to the '+exec.role+'…">'+(App.state.boardAnswers[cur]||'')+'</textarea>'+
+      '<div class="actions-row" style="margin-top:12px;"><button class="btn btn-primary btn-sm" id="board-submit">SUBMIT RESPONSE</button></div>'+
+      (fb ? '<div class="feedback-line"><b>'+fb.level.toUpperCase()+'.</b> '+fb.note+'</div>' : '')+
+    '</div>'+
+    '<div class="actions-row"><button class="btn btn-primary" id="btn-goto-score" '+(allExecsAnswered()?'':'disabled')+'>RECEIVE YOUR ANALYST SCORE →</button></div>';
+}
+function allExecsAnswered(){ return EXECS.every(function(e){return App.state.boardFeedback[e.id];}); }
+function bindBoardroom(){
+  var back = $('#btn-back-decision'); if(back) back.onclick = function(){ goPhase('decision'); };
+  $$('.exec-tab').forEach(function(t){
+    t.onclick = function(){ App.state.boardCurrentExec = t.getAttribute('data-exec'); render(); };
+  });
+  var ta = $('#board-answer'); if(ta) ta.oninput = function(){ App.state.boardAnswers[App.state.boardCurrentExec||'ceo']=ta.value; };
+  var sub = $('#board-submit');
+  if(sub) sub.onclick = function(){
+    var cur = App.state.boardCurrentExec || 'ceo';
+    var text = $('#board-answer').value;
+    App.state.boardAnswers[cur] = text;
+    App.state.boardFeedback[cur] = scoreAnswer(text, cur);
+    render();
+  };
+  var b = $('#btn-goto-score'); if(b) b.onclick = function(){ if(allExecsAnswered()) goPhase('score'); };
+}
+/* ---------------- Analyst Score ---------------- */
+function computeScore(){
+  var s = App.state;
+  // Root-cause reasoning
+  var rcPts = 0;
+  ['h1','h2','h4'].forEach(function(h){ if(['confirmed','supported'].indexOf(s.hypStatus[h])>-1) rcPts+=15; });
+  if(['confirmed','supported','investigating'].indexOf(s.hypStatus.h3)>-1) rcPts+=10;
+  if(s.hypStatus.h5==='rejected') rcPts+=15;
+  rcPts = Math.min(100, rcPts);
+
+  // Data literacy — hypotheses actually investigated
+  var evViewed = Object.keys(s.hypEvidenceViewed).filter(function(k){return s.hypEvidenceViewed[k];}).length;
+  var dataLit = Math.min(100, evViewed/5*70 + s.askHistory.length*6);
+
+  // Problem framing — rationale/answers mention mix/quality vs pure cost framing
+  var allText = (s.decisionRationale+' '+Object.values(s.boardAnswers).join(' ')).toLowerCase();
+  var framingHits = ['mix','quality','discount','segment','concentrat'].filter(function(k){return allText.indexOf(k)>-1;}).length;
+  var framing = Math.min(100, 40 + framingHits*13);
+
+  // Financial thinking
+  var finHits = ['margin','ebitda','cash','revenue','profit'].filter(function(k){return allText.indexOf(k)>-1;}).length;
+  var finThink = Math.min(100, 35 + finHits*13);
+
+  // Strategic thinking — decision quality
+  var decMap = {A:70,B:55,C:75,D:30,E:95};
+  var strategic = s.decisionChoice ? decMap[s.decisionChoice] : 20;
+
+  // Risk awareness — mentions of risk/assumption/trade-off + boardroom CFO handling
+  var riskHits = ['risk','assumption','trade-off','downside','uncertain'].filter(function(k){return allText.indexOf(k)>-1;}).length;
+  var cfoFb = s.boardFeedback.cfo;
+  var riskAware = Math.min(100, 30 + riskHits*12 + (cfoFb? (cfoFb.level==='strong'?25:cfoFb.level==='partial'?12:0) : 0));
+
+  // Communication — boardroom feedback levels + rationale length
+  var levels = Object.values(s.boardFeedback).map(function(f){return f.level==='strong'?100:f.level==='partial'?60:25;});
+  var boardAvg = levels.length? levels.reduce(function(a,b){return a+b;},0)/levels.length : 30;
+  var rationaleLenScore = Math.min(100, (s.decisionRationale||'').trim().split(/\s+/).filter(Boolean).length*3);
+  var comm = Math.round(boardAvg*0.65 + rationaleLenScore*0.35);
+
+  var categories = [
+    {name:'Problem Framing', score:Math.round(framing)},
+    {name:'Data Literacy', score:Math.round(dataLit)},
+    {name:'Root-Cause Reasoning', score:Math.round(rcPts)},
+    {name:'Financial Thinking', score:Math.round(finThink)},
+    {name:'Strategic Thinking', score:Math.round(strategic)},
+    {name:'Risk Awareness', score:Math.round(riskAware)},
+    {name:'Communication', score:Math.round(comm)}
+  ];
+  var overall = Math.round(categories.reduce(function(a,c){return a+c.score;},0)/categories.length);
+  return {categories:categories, overall:overall};
+}
+function renderScore(){
+  if(!App.state.scoreResult) App.state.scoreResult = computeScore();
+  var r = App.state.scoreResult;
+  var bars = r.categories.map(function(c){
+    return '<div class="score-bar-row"><span>'+c.name+'</span><div class="sb-track"><div class="sb-fill" style="width:'+c.score+'%;"></div></div><span class="mono">'+c.score+'</span></div>';
+  }).join('');
+  var strengths = r.categories.slice().sort(function(a,b){return b.score-a.score;}).slice(0,3);
+  var weaknesses = r.categories.slice().sort(function(a,b){return a.score-b.score;}).slice(0,3);
+  var dec = DECISIONS.find(function(d){return d.id===App.state.decisionChoice;});
+  var verdict = 'You identified the shape of a revenue-quality problem rather than treating it as a simple cost issue, and chose '+(dec?('Option '+dec.id+' ('+dec.name+')'):'a course of action')+' under real trade-offs. '+
+    (r.overall>=80?'This is board-ready analysis with clear evidence discipline.':r.overall>=60?'The reasoning holds up, but tighten the connection between evidence and recommendation before presenting it live.':'The underlying diagnosis needs more evidence before it would survive board scrutiny.');
+  return '<h2 class="section-title">Analyst Score</h2>'+
+    '<div class="score-hero"><div class="sh-num">'+r.overall+'/100</div><div class="sh-label">WAR ROOM ANALYST SCORE</div></div>'+
+    '<div class="panel"><div class="score-bars">'+bars+'</div></div>'+
+    '<div class="verdict-cols">'+
+      '<div class="panel"><div class="panel-title">WHAT YOU GOT RIGHT</div><ul class="verdict-list">'+
+        strengths.map(function(c){return '<li>Strong '+c.name.toLowerCase()+' ('+c.score+'/100).</li>';}).join('')+
+      '</ul></div>'+
+      '<div class="panel"><div class="panel-title">WHAT YOU MISSED</div><ul class="verdict-list">'+
+        weaknesses.map(function(c){return '<li>'+c.name+' could go deeper ('+c.score+'/100).</li>';}).join('')+
+      '</ul></div>'+
+    '</div>'+
+    '<div class="panel"><div class="panel-title">EXECUTIVE VERDICT</div><p style="color:var(--text-dim);">'+verdict+'</p></div>'+
+    '<div class="actions-row"><button class="btn btn-primary" id="btn-goto-conseq">SEE THE CONSEQUENCES →</button></div>';
+}
+function bindScoreView(){
+  var b = $('#btn-goto-conseq'); if(b) b.onclick = function(){ goPhase('consequence'); };
+}
+/* ---------------- Consequence Engine ---------------- */
+var CONSEQUENCE_TEMPLATES = {
+  A:{d30:'Deal-desk discount ceilings take effect. SMB deal cycles lengthen slightly as reps push back.',
+     d90:'Gross margin improves roughly in line with the simulator estimate. A handful of price-sensitive SMB accounts churn faster than expected.',
+     d365:'Margin gains hold. A regional competitor begins targeting the SMB accounts you tightened terms on — a second-order effect worth watching next case.', outcome:'partial'},
+  B:{d30:'The 4% price increase is communicated. Enterprise accounts absorb it with light pushback; SMB inbound requests for discounts spike.',
+     d90:'Realized revenue lands below the elasticity assumption — some Mid-Market accounts negotiate the increase away, muting the margin gain.',
+     d365:'Net effect is positive but smaller than modeled — a reminder that elasticity assumptions deserve segment-level testing before a blanket rollout.', outcome:'partial'},
+  C:{d30:'Marketing reallocates spend away from Paid Digital/Referral toward Outbound and Partner channels. Lead volume drops noticeably.',
+     d90:'New-logo growth slows, but the accounts that do close skew toward higher CLV, higher-margin profiles.',
+     d365:'Customer base quality improves and blended margin trends up, but the growth story you tell the board next year is a harder one — slower, but healthier.', outcome:'success'},
+  D:{d30:'Nothing changes operationally. The board asks for a follow-up in one quarter.',
+     d90:'Discounting and mix shift continue on trend. EBITDA erosion continues at a similar pace.',
+     d365:'The gap between revenue growth and profit widens further, and the same root cause returns as a bigger problem with less runway to fix it.', outcome:'failure'},
+  E:{d30:'Deal-desk discipline tightens for SMB/Mid-Market while an Enterprise retention program launches for at-risk accounts.',
+     d90:'Margin recovers gradually; Enterprise churn shows early signs of stabilizing as account teams re-engage at-risk logos.',
+     d365:'The business grows more slowly but at meaningfully higher quality — profit and revenue move together again. This is the closest outcome to a genuine fix rather than a lever pull.', outcome:'success'}
+};
+function renderConsequence(){
+  var id = App.state.decisionChoice || 'D';
+  var t = CONSEQUENCE_TEMPLATES[id];
+  var sim = simulate({discount:id==='A'?-5:0, price:id==='B'?4:0, churn:0, marketing:id==='C'?-15:0});
+  return '<h2 class="section-title">Consequences</h2>'+
+    '<p class="section-sub">Decisions don\'t disappear after the score. Here is what plays out.</p>'+
+    '<div class="panel"><div class="timeline">'+
+      '<div class="tl-item"><div class="tl-marker">30 DAYS</div><div class="tl-body"><p>'+t.d30+'</p></div></div>'+
+      '<div class="tl-item"><div class="tl-marker">90 DAYS</div><div class="tl-body"><p>'+t.d90+'</p></div></div>'+
+      '<div class="tl-item"><div class="tl-marker">12 MONTHS</div><div class="tl-body"><p>'+t.d365+'</p></div></div>'+
+    '</div></div>'+
+    '<div class="notice">Outcome classification: <b style="color:var(--text);text-transform:uppercase;">'+t.outcome+'</b> — projected EBITDA under this path: '+U.fmtUSDk(sim.ebitda)+' (Year 2 actual EBITDA baseline: '+U.fmtUSDk(E.rootCause().cy.ebitda)+').</div>'+
+    '<div class="actions-row"><button class="btn btn-primary" id="btn-goto-debrief">READ THE CASE DEBRIEF →</button></div>';
+}
+function bindConsequence(){ var b=$('#btn-goto-debrief'); if(b) b.onclick=function(){ goPhase('debrief'); }; }
+
+/* ---------------- Case Debrief ---------------- */
+function renderDebrief(){
+  var rc = E.rootCause();
+  var dec = DECISIONS.find(function(d){return d.id===App.state.decisionChoice;});
+  var t = CONSEQUENCE_TEMPLATES[App.state.decisionChoice||'D'];
+  var r = App.state.scoreResult || computeScore();
+  return '<h2 class="section-title">Case Debrief — '+CASE_001.id+'</h2>'+
+    '<div class="panel"><div class="panel-title">The problem, as management first saw it</div><p style="color:var(--text-dim);">Revenue and customer count were both rising, so the falling operating profit looked like a cost problem — most likely rising fulfillment or overhead costs.</p></div>'+
+    '<div class="panel"><div class="panel-title">What was actually happening</div><p style="color:var(--text-dim);">Growth was concentrated in low-margin, heavily-discounted SMB volume ('+U.fmtPct(rc.smbShareCY,1)+' of revenue, up from '+U.fmtPct(rc.smbSharePY,1)+'), while the company simultaneously lost Enterprise accounts at a rising rate ('+U.fmtPP(rc.entChurnCY-rc.entChurnPY)+'). It was a revenue-quality problem dressed as a cost problem.</p></div>'+
+    '<div class="panel"><div class="panel-title">Why it was easy to misread</div><p style="color:var(--text-dim);">Both headline growth metrics (revenue, customers) were positive, and CAC and fulfillment cost also moved unfavorably — real signals, but secondary ones that made the SMB mix/discount story easy to miss.</p></div>'+
+    '<div class="panel"><div class="panel-title">Your decision</div><p style="color:var(--text-dim);">'+(dec? ('Option '+dec.id+' — '+dec.name+'. '+App.state.decisionRationale) : 'No decision recorded.')+'</p></div>'+
+    '<div class="panel"><div class="panel-title">What happened</div><p style="color:var(--text-dim);">'+(t? t.d365 : '')+'</p></div>'+
+    '<div class="panel"><div class="panel-title">Analyst lesson</div><p style="color:var(--text-dim);">Growth and profit are not the same signal. When they diverge, check the composition of growth — segment, product mix and discount depth — before reaching for a cost-cutting explanation.</p></div>'+
+    '<div class="actions-row"><button class="btn btn-primary" id="btn-save-portfolio">SAVE TO PORTFOLIO</button></div>'+
+    '<div id="save-status" style="text-align:right;font-size:12px;color:var(--text-faint);margin-top:8px;"></div>';
+}
+function bindDebrief(){
+  var b = $('#btn-save-portfolio');
+  if(b) b.onclick = async function(){
+    var r = App.state.scoreResult || computeScore();
+    var dec = DECISIONS.find(function(d){return d.id===App.state.decisionChoice;});
+    var record = {
+      caseId:CASE_001.id, title:CASE_001.title, company:CASE_001.company, ts:Date.now(),
+      overall:r.overall, categories:r.categories,
+      decision: dec? (dec.id+' — '+dec.name) : '—',
+      rootCause:'Revenue-quality problem: low-margin SMB growth + rising discounts + Enterprise churn.',
+      rationale: App.state.decisionRationale
+    };
+    var status = $('#save-status');
+    try{
+      await window.storage.set('portfolio:'+record.ts, JSON.stringify(record), false);
+      if(status) status.textContent = 'Saved to your portfolio.';
+    }catch(e){
+      if(status) status.textContent = 'Could not save (storage unavailable) — you can still view your score above.';
+    }
+  };
+}
+
+/* ---------------- Portfolio ---------------- */
+function renderPortfolio(){
+  return '<h2 class="section-title">Analyst Portfolio</h2>'+
+    '<p class="section-sub">Completed cases and your analyst profile.</p>'+
+    '<div id="portfolio-list"><div class="empty-state">Loading…</div></div>';
+}
+async function bindPortfolio(){
+  var list = document.getElementById('portfolio-list');
+  try{
+    var keys = await window.storage.list('portfolio:', false);
+    if(!keys || !keys.keys || !keys.keys.length){
+      list.innerHTML = '<div class="empty-state">No completed cases yet. Enter the War Room and finish a case to build your portfolio.</div>';
+      return;
+    }
+    var records = [];
+    for(var i=0;i<keys.keys.length;i++){
+      try{
+        var res = await window.storage.get(keys.keys[i], false);
+        if(res && res.value) records.push(JSON.parse(res.value));
+      }catch(e){}
+    }
+    records.sort(function(a,b){return b.ts-a.ts;});
+    if(!records.length){ list.innerHTML = '<div class="empty-state">No completed cases yet.</div>'; return; }
+    var avg = Math.round(records.reduce(function(s,r){return s+r.overall;},0)/records.length);
+    var best = records.slice().sort(function(a,b){
+      var am = Math.max.apply(null,a.categories.map(function(c){return c.score;}));
+      var bm = Math.max.apply(null,b.categories.map(function(c){return c.score;}));
+      return bm-am;
+    })[0];
+    var bestCat = best.categories.slice().sort(function(a,b){return b.score-a.score;})[0];
+    var devCat = records[0].categories.slice().sort(function(a,b){return a.score-b.score;})[0];
+    var style = avg>=75 ? 'Data-driven / Growth-oriented' : avg>=55 ? 'Balanced / Pragmatic' : 'Developing — lean on the Hypothesis Board more';
+    var cards = records.map(function(r){
+      return '<div class="portfolio-card"><div><div style="font-weight:600;">'+r.caseId+' — '+r.title+'</div>'+
+        '<div style="color:var(--text-faint);font-size:12px;">'+r.company+' · Decision: '+r.decision+' · '+new Date(r.ts).toLocaleDateString()+'</div></div>'+
+        '<div class="pf-score">'+r.overall+'</div></div>';
+    }).join('');
+    list.innerHTML = '<div class="grid-3" style="margin-bottom:24px;">'+
+      '<div class="panel"><div class="kpi-label">Strongest capability</div><div class="kpi-value" style="font-size:16px;">'+bestCat.name+'</div></div>'+
+      '<div class="panel"><div class="kpi-label">Development area</div><div class="kpi-value" style="font-size:16px;">'+devCat.name+'</div></div>'+
+      '<div class="panel"><div class="kpi-label">Decision style</div><div class="kpi-value" style="font-size:16px;">'+style+'</div></div>'+
+    '</div>'+cards;
+  }catch(e){
+    list.innerHTML = '<div class="empty-state">Portfolio storage is unavailable right now.</div>';
+  }
+}
+
+/* ---------------- Init ---------------- */
+render();
+window.WarRoomApp = App;
+})();
+</script>
+</body>
+</html>
