@@ -54,3 +54,37 @@ WAR ROOM is built around a deterministic synthetic-data and analytics pipeline.
 * State-driven frontend architecture
 * Decision-support UX
 * Strategic communication and executive decision-making
+
+## Tech Notes
+
+* Zero build tooling: plain HTML/CSS/JS in one file (`index.html`).
+* Charts via Chart.js loaded from a CDN.
+* Fonts: IBM Plex Sans / IBM Plex Mono via Google Fonts CDN.
+* Analyst Portfolio persistence uses browser `localStorage`, allowing saved results to persist across sessions on the same browser.
+* The application is fully deployable as a static site through GitHub Pages.
+
+## Project Highlights
+
+### 🔎 Investigate
+
+Explore Finance, Customers, Products, Pricing, Marketing, and Operations data to understand what changed.
+
+### 🧠 Diagnose
+
+Build and test competing hypotheses using evidence from the underlying dataset.
+
+### 🎯 Decide
+
+Evaluate strategic options using modelled revenue, margin, churn, risk, and time-horizon trade-offs.
+
+### 🗣️ Defend
+
+Enter the boardroom and respond to challenges from the CEO, CFO, and COO.
+
+### 📈 Simulate
+
+Use the What-If Simulator to explore how changes in pricing, discounts, churn, and marketing affect the business.
+
+### ⚡ Experience the Consequences
+
+See simulated 30/90/365-day outcomes based on your decision.
